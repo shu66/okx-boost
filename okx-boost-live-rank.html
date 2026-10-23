@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>OKX Boost 实时排行</title>
+<style>
+:root{--bg:#0b0d12;--p1:#12151c;--p2:#171b24;--p3:#1e2330;--line:#232837;--line2:#2e3446;--fg:#e9edf5;--sub:#9aa3b5;--dim:#626b7f;
+  --acc:#b6f23d;--acc2:#7b61ff;--up:#22c55e;--down:#f43f5e;--warn:#f59e0b;--blue:#60a5fa;--r:14px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scrollbar-width:thin;scrollbar-color:#2b3142 transparent}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#2b3142;border-radius:8px}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,sans-serif;font-variant-numeric:tabular-nums}
+a{color:var(--blue);text-decoration:none}code{background:var(--p3);padding:1px 5px;border-radius:5px;font-size:12px}
+.wrap{max-width:1360px;margin:0 auto;padding:16px 18px 60px}
+.prog{position:fixed;left:0;right:0;top:0;height:2px;z-index:50}.prog div{height:100%;width:0;background:var(--acc);transition:width .3s}
+/* 顶栏 */
+.top{position:sticky;top:0;z-index:20;background:rgba(11,13,18,.88);backdrop-filter:blur(12px);margin:0 -18px 14px;padding:10px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--acc);color:#0b0d12;display:grid;place-items:center;font-weight:900}
+h1{font-size:16px;margin:0;font-weight:700}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;max-width:100%}.tabs::-webkit-scrollbar{display:none}
+.tab{border:1px solid var(--line);background:var(--p1);color:var(--sub);padding:6px 12px;border-radius:999px;font-weight:600;cursor:pointer;font-size:13px;display:flex;gap:6px;align-items:center;white-space:nowrap;font-family:inherit}
+.tab.on{background:var(--fg);color:#0b0d12;border-color:var(--fg)}
+.pill{font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(34,197,94,.15);color:var(--up);font-weight:700}.pill.end{background:rgba(244,63,94,.15);color:var(--down)}
+.tab.on .pill{background:rgba(0,0,0,.1)}
+.tools{display:flex;gap:8px;align-items:center}
+.status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--warn);flex:none}.dot.live{background:var(--up);box-shadow:0 0 0 3px rgba(34,197,94,.18)}.dot.bad{background:var(--down)}
+select,input,textarea,.btn{background:var(--p2);color:var(--fg);border:1px solid var(--line2);border-radius:10px;padding:7px 11px;font-size:13px;outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+.btn{cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}.btn:hover{border-color:var(--sub)}
+.btn.pri{background:var(--acc);color:#0b0d12;border-color:transparent;font-weight:700}.btn.ghost{background:transparent}.btn.sm{padding:4px 10px;font-size:12px;border-radius:8px}
+.card{background:var(--p1);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.sec-t{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.sec-t h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
+.muted{color:var(--sub)}.dim{color:var(--dim)}.up{color:var(--up)}.down{color:var(--down)}.warn{color:var(--warn)}
+/* 活动 + 指标 */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px;margin-bottom:12px}
+.act h2{margin:2px 0 4px;font-size:18px}.act .sub{color:var(--sub);font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12px;color:var(--sub);background:var(--p2);border:1px solid var(--line);padding:2px 9px;border-radius:999px}.chip b{color:var(--fg);font-weight:600}
+.cd{display:flex;gap:6px;margin-top:10px}.cd div{background:var(--p2);border:1px solid var(--line);border-radius:10px;padding:5px 9px;min-width:50px;text-align:center}
+.cd b{font-size:17px;display:block;line-height:1.2}.cd span{font-size:10.5px;color:var(--sub)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:var(--p1);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.kpi .l{color:var(--sub);font-size:12px}.kpi .v{font-size:20px;font-weight:750;margin-top:2px;letter-spacing:-.3px}.kpi .s{color:var(--dim);font-size:11.5px;margin-top:2px}
+/* 收藏 */
+.favs{margin-bottom:12px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.fc{position:relative;background:var(--p2);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 16px;cursor:pointer;overflow:hidden}
+.fc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tc,#3a4256)}
+.fc .h{display:flex;justify-content:space-between;align-items:center;gap:6px}.fc .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc .ad{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--dim);margin-top:1px}
+.rkline{display:flex;justify-content:space-between;align-items:flex-end;margin:6px 0 8px}
+.fc .rk{font-size:24px;font-weight:800;letter-spacing:-.5px}.rv{text-align:right}.rv .big{font-size:17px;font-weight:750}.rv .dim{font-size:11.5px}
+.g{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12.5px}.g span:nth-child(odd){color:var(--sub)}.g span:nth-child(even){text-align:right}
+.hint{color:var(--dim);font-size:11.5px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.fc.total{background:linear-gradient(135deg,rgba(182,242,61,.08),rgba(123,97,255,.06)),var(--p2);border-color:rgba(182,242,61,.25);cursor:default}
+.fc.total .rk{color:var(--up)}
+.tbadge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--p3);color:var(--tc,var(--sub));white-space:nowrap}
+.empty{color:var(--dim);text-align:center;padding:20px 0;font-size:13px}
+/* 排行 */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;background:var(--p2);border:1px solid var(--line);border-radius:9px;padding:2px}
+.seg button{border:0;background:transparent;color:var(--sub);padding:4px 9px;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit}.seg button.on{background:var(--p3);color:var(--fg)}
+.sw{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--sub);cursor:pointer;user-select:none}
+.sw input{display:none}.sw i{width:28px;height:16px;border-radius:9px;background:#2b3142;position:relative;transition:.2s}
+.sw i::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#c5cddb;transition:.2s}
+.sw input:checked+i{background:var(--acc)}.sw input:checked+i::after{left:14px;background:#0b0d12}
+.tw{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--dim);font-weight:600;font-size:11.5px;text-align:right;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;position:sticky;top:0;background:var(--p1)}
+th.l,td.l{text-align:left}td{padding:8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+tbody tr.r td:first-child{box-shadow:inset 3px 0 0 var(--tc,transparent)}tbody tr.r:hover td{background:var(--p2)}
+tr.fav td{background:rgba(182,242,61,.05)}
+tr.flash td,.mr.flash{animation:fl 2.4s}@keyframes fl{from{background:rgba(96,165,250,.2)}to{background:transparent}}
+tr.band td{padding:12px 8px 6px;border-bottom:1px solid var(--line2);text-align:left;background:transparent!important}
+.band-l{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub)}.band-l b{color:var(--tc)}.band-l .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--tc),transparent);opacity:.4}
+.rkb{display:inline-grid;place-items:center;min-width:30px;height:22px;padding:0 6px;border-radius:7px;background:var(--p3);font-weight:700;font-size:12px}
+.rkb.g1{background:#f5c451;color:#231a00}.rkb.g2{background:#cfd6e2;color:#151922}.rkb.g3{background:#d7925d;color:#1f1005}
+.addr{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--fg)}
+.star{cursor:pointer;color:#3d4559;font-size:14px;margin-right:6px}.star.on{color:#f5c451}
+.delta{font-size:11px;font-weight:700;margin-left:4px}
+.tag{font-size:10.5px;padding:1px 6px;border-radius:6px;background:var(--p3);color:var(--dim);margin-left:6px}
+.tag.red{color:var(--down);background:rgba(244,63,94,.1)}.tag.yel{color:var(--warn);background:rgba(245,158,11,.1)}.tag.grn{color:var(--up);background:rgba(34,197,94,.1)}
+.tok{font-size:10.5px;padding:1px 6px;border-radius:6px;background:rgba(96,165,250,.12);color:var(--blue);margin-left:6px;font-weight:600;white-space:nowrap}.tok i{font-style:normal;color:var(--dim);font-weight:400;margin-left:3px}
+.rdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--down);margin-left:5px;vertical-align:1px}
+.news{max-height:62vh;overflow:auto;margin-top:6px}.news .it{padding:12px 0;border-bottom:1px solid var(--line)}.news .it:last-child{border-bottom:0}
+.news .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}.news .hd b{font-size:14px}.news .hd .new{font-size:10.5px;padding:1px 6px;border-radius:6px;background:rgba(244,63,94,.15);color:var(--down);font-weight:700}
+.news .hd .kind{font-size:10.5px;padding:1px 6px;border-radius:6px;background:var(--p3);color:var(--sub)}.news .hd .kind.n{background:rgba(245,158,11,.12);color:var(--warn)}
+.news ul{margin:0;padding-left:18px;color:var(--sub);font-size:13px;line-height:1.75}.news ul b{color:var(--fg);font-weight:600}.news p{margin:0;color:var(--sub);font-size:13px;line-height:1.75;white-space:pre-wrap}
+.vsw{display:inline-flex;background:var(--p2);border:1px solid var(--line);border-radius:10px;padding:2px}.vsw button{border:0;background:transparent;color:var(--sub);padding:5px 11px;border-radius:8px;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700}.vsw button.on{background:var(--fg);color:#0b0d12}.vsw i{font-style:normal;font-size:11px;font-weight:600;margin-left:2px;color:var(--warn)}
+.cltag{font-size:10.5px;padding:1px 6px;border-radius:6px;background:rgba(123,97,255,.16);color:#b4a6ff;margin-left:6px;cursor:pointer;white-space:nowrap}.cltag.b{background:rgba(245,158,11,.12);color:var(--warn)}
+.clbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:12.5px;color:var(--sub)}
+.clg{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--p2)}.clg.focus{border-color:#7b61ff;box-shadow:0 0 0 2px rgba(123,97,255,.25)}
+.clh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:11px 14px;cursor:pointer}.clh b{font-size:14px}.clh .st{display:flex;gap:14px;margin-left:auto;font-size:12.5px;color:var(--sub);flex-wrap:wrap}.clh .st b{color:var(--fg);font-size:13px}
+.clev{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 10px}.clev span{font-size:11.5px;padding:2px 8px;border-radius:7px;background:var(--p3);color:var(--sub)}.clev span b{color:var(--fg);font-weight:600}
+.hide{display:none!important}
+.clm{border-top:1px solid var(--line);padding:4px 14px 8px}.clm table td{padding:6px 6px}.clnm{font-size:13px;color:var(--acc);font-weight:700}.cled{border:0;background:transparent;color:var(--dim);cursor:pointer;font-size:13px;padding:0 4px}.cled:hover{color:var(--fg)}
+.lv{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:6px}.lv.h{background:rgba(244,63,94,.15);color:var(--down)}.lv.m{background:rgba(245,158,11,.14);color:var(--warn)}.lv.l{background:var(--p3);color:var(--sub)}
+.dcd{background:linear-gradient(135deg,rgba(182,242,61,.08),rgba(123,97,255,.06));border:1px solid rgba(182,242,61,.25);border-radius:12px;padding:10px 12px;margin-top:10px}.dcd .cd{margin-top:6px}.dcd .cd b{color:var(--acc)}.dcd-h{font-size:13px}.dbar{height:4px;border-radius:3px;background:var(--p3);margin-top:8px;overflow:hidden}.dbar i{display:block;height:100%;background:var(--acc)}
+.lbl{font-size:11px;color:var(--acc);margin-left:6px}
+.pager{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px;flex-wrap:wrap}
+.pgs{display:flex;gap:4px;flex-wrap:wrap}.board{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;width:100%;order:3}.board:empty{display:none}.board button{border:1px solid var(--line);background:var(--p2);color:var(--sub);padding:4px 10px;border-radius:8px;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap}.board button.on{background:var(--acc);color:#0b0d12;border-color:transparent;font-weight:700}.board button:disabled{opacity:.35;cursor:default}.board .now{font-size:10px;margin-left:4px;color:var(--up)}.board button.on .now{color:#0b0d12}.pgjump{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px}.pgs button{min-width:32px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--p2);color:var(--sub);cursor:pointer;font-family:inherit}
+.pgs button.on{background:var(--acc);color:#0b0d12;border-color:transparent;font-weight:700}.pgs button:disabled{opacity:.4}
+#mlist{display:none}
+.side{display:flex;flex-direction:column;gap:12px}.side h3{margin:0 0 10px;font-size:14px}
+.tiers{display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;font-size:12.5px;align-items:center}.tiers .sw2{width:8px;height:8px;border-radius:3px}.tiers b{font-weight:600;text-align:right}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;color:var(--sub)}.kv b{color:var(--fg);font-weight:600}
+.feed .it{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.sb{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:5px}.b-buy{background:rgba(34,197,94,.14);color:var(--up)}.b-sell{background:rgba(244,63,94,.14);color:var(--down)}
+.note{margin-top:16px;color:var(--dim);font-size:12px;line-height:1.8}.note b{color:var(--sub)}
+.proxybox{background:var(--p2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--sub);line-height:1.8}
+/* 弹窗 */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;z-index:40;padding:50px 14px;overflow:auto}
+.mask.on{display:flex}.modal{width:min(720px,100%);background:var(--p1);border:1px solid var(--line2);border-radius:18px;padding:20px}
+.modal h3{margin:0 0 6px;font-size:16px}.modal textarea{width:100%;min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;margin:10px 0;resize:vertical}
+.flist{margin-top:12px;border-top:1px solid var(--line)}
+.flist .fi{display:grid;grid-template-columns:1fr 160px auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.flist .fi input{padding:5px 9px;min-width:0}
+.mfoot{display:flex;justify-content:space-between;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+/* 平板 */
+@media(max-width:1100px){.main{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.side{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}}
+/* 手机：只保留关键内容 */
+@media(max-width:760px){
+  .top .status{order:5;width:100%;font-size:11.5px}
+  .wrap{padding:0 10px 40px}.top{margin:0 -10px 10px;padding:8px 10px;gap:8px}
+  h1{font-size:15px}.hide-m,.status .txt2,#odot,#iv,#pause,#csv,#offCard,.side>.card:last-child,.note,#favOther,.act .sub,.act .chips:last-of-type{display:none!important}
+  .main>.side{order:-1;display:block;margin:0}.side .card{margin-bottom:0}.tiers{font-size:12px}
+  .mstat{display:flex!important}
+  .tools{gap:6px}.btn{padding:6px 10px}
+  .card{padding:12px;border-radius:12px}.act h2{font-size:16px}
+  .kpis{grid-template-columns:repeat(2,1fr);gap:8px}.kpi:nth-child(n+5){display:none}.kpi{padding:10px 12px}.kpi .v{font-size:17px}.kpi .s{display:none}
+  .fgrid{grid-template-columns:1fr}
+  .tw{display:none}#mlist{display:block}
+  .sec-t .toolbar{width:100%}.sec-t .toolbar input{flex:1;min-width:0}
+  .mband{font-size:12px;color:var(--sub);padding:12px 2px 4px;border-bottom:1px solid var(--line2)}.mband b{color:var(--tc);margin-right:6px}
+  .mr{padding:10px 2px;border-bottom:1px solid var(--line)}.mr.fav{background:rgba(182,242,61,.05)}
+  .m1{display:flex;align-items:center;gap:10px}.m2{flex:1;min-width:0;font-size:12.5px}.m2 .dim{font-size:12px}.m3{text-align:right;font-size:13px;font-weight:700}
+  .flist .fi{grid-template-columns:1fr 1fr;}.flist .fi>div{grid-column:1/-1}
+  .pager select{display:none}
+}
+</style>
+</head>
+<body>
+<div class="prog"><div id="prog"></div></div>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="logo">B</div><h1>OKX Boost 排行</h1></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="tools">
+      <div class="status"><span class="dot" id="dot"></span><span id="stat">初始化…</span><span class="dot" id="odot"></span><span id="ostat" class="txt2">官方接口</span></div>
+      <select id="iv" title="刷新间隔"><option value="8">8s</option><option value="15" selected>15s</option><option value="30">30s</option><option value="60">60s</option></select>
+      <button class="btn" id="pause">暂停</button>
+      <button class="btn" id="verBtn" title="更新公告"><span id="verTxt">v</span><i class="rdot hide" id="verDot"></i></button>
+      <button class="btn hide" id="mgrBtn" style="display:none">☰ 活动</button>
+      <button class="btn" id="csv">导出</button>
+    </div>
+  </div>
+
+  <div class="hero"><div class="card act" id="actCard"></div><div class="kpis" id="kpis"></div></div>
+
+  <div class="card favs">
+    <div class="sec-t"><h3>⭐ 我的账号 <span class="muted" id="favSum" style="font-weight:400;font-size:12px"></span></h3>
+      <div class="toolbar"><span id="favOther"></span><button class="btn sm" id="favRefresh">刷新</button><button class="btn sm pri" id="favMgr">管理账号</button></div></div>
+    <div class="fgrid" id="favGrid"></div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div class="sec-t">
+        <h3><span class="vsw" id="viewSw"><button data-v="rank" class="on">排行榜</button><button data-v="cl">疑似关联 <i id="clN"></i></button></span> <span class="muted" style="font-weight:400;font-size:12px" id="rankInfo"></span></h3>
+        <div class="board" id="board"></div>
+        <div class="toolbar">
+          <label class="sw"><input type="checkbox" id="onlyFav"><i></i>只看收藏</label>
+          <label class="sw hide-m"><input type="checkbox" id="bands" checked><i></i>阶梯</label>
+          <div class="seg hide-m" id="win"></div>
+          <input id="q" placeholder="搜索地址 / 备注" style="width:170px">
+        </div>
+      </div>
+      <div id="clview" class="hide"></div>
+      <div id="rkview"><div class="tw"><table><thead id="th"></thead><tbody id="tbody"></tbody></table></div>
+      <div id="mlist"></div>
+      <div class="pager"><span class="muted" style="font-size:12px" id="pgInfo"></span><div class="pgs" id="pgs"></div><span class="pgjump">跳至 <input id="pgGo" type="number" min="1" style="width:64px;padding:4px 6px"> 页</span>
+        <select id="ps"><option value="25">25 / 页</option><option value="50" selected>50 / 页</option><option value="100">100 / 页</option><option value="200">200 / 页</option></select></div></div>
+    </div>
+    <div class="side">
+      <div class="card" id="tierCard"></div>
+      <div class="card" id="offCard"></div>
+      <div class="card"><h3 style="display:flex;justify-content:space-between">实时成交 <span class="muted" style="font-weight:400;font-size:12px" id="feedN"></span></h3><div class="feed" id="feed"></div></div>
+    </div>
+  </div>
+  <div class="note" id="note"></div>
+</div>
+
+<!-- 账号管理 -->
+<div class="mask" id="favMask"><div class="modal">
+  <h3>管理我的账号</h3>
+  <div class="muted" style="font-size:12.5px">每行一个地址，可在后面加备注，例如 <code>0xabc…123, 主号</code>，支持一次粘贴多个。</div>
+  <textarea id="favInput" placeholder="0x1234...abcd, 主号&#10;0x5678...ef01 小号1"></textarea>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" id="favAdd">批量添加</button><button class="btn" id="favExport">复制全部</button><button class="btn ghost" id="favClear" style="color:var(--down)">清空</button></div>
+  <div class="flist" id="favList"></div>
+  <div class="mfoot"><span class="muted" style="font-size:12px">保存在本地浏览器，所有活动共用。</span><button class="btn" id="favClose">完成</button></div>
+</div></div>
+
+<!-- 活动管理 -->
+<div class="mask" id="mgrMask"><div class="modal">
+  <h3>活动管理</h3>
+  <div class="muted" style="font-size:12.5px">粘贴 OKX Boost 活动链接即可新增（X Launch / 交易赛），服务器自动统计。隐藏的活动保留数据。</div>
+  <div style="display:flex;gap:8px;margin-top:12px"><input id="mgrUrl" placeholder="https://web3.okx.com/zh-hans/boost/..." style="flex:1;min-width:0"><button class="btn pri" id="mgrAdd">添加</button></div>
+  <div style="display:flex;gap:8px;margin-top:8px" id="mgrPassRow"><input id="mgrPass" type="password" placeholder="管理密码（ADMIN_PASS）" style="flex:1"></div>
+  <div class="muted" id="mgrMsg" style="font-size:12.5px;margin-top:8px"></div><div id="mgrDiag" style="font-size:12px;margin-top:8px;line-height:1.8"></div>
+  <div class="flist" id="mgrList"></div>
+  <div class="mfoot"><span></span><button class="btn" id="mgrClose">关闭</button></div>
+</div></div>
+
+<!-- 更新公告 -->
+<div class="mask" id="newsMask"><div class="modal">
+  <h3 style="display:flex;justify-content:space-between;align-items:center">更新公告 <span class="muted" id="newsVer" style="font-weight:400;font-size:12px"></span></h3>
+  <div id="newsBody" class="news"></div>
+  <div class="mfoot"><span class="muted" style="font-size:12px">点右上角版本号可随时查看</span><button class="btn pri" id="newsClose">知道了</button></div>
+</div></div>
+
+<!-- 地址详情（手机） -->
+<div class="mask" id="detMask"><div class="modal" id="detBody"></div></div>
+
+<script>
+/* ================= 配置 ================= */
+const PAL=["#f5c451","#c9d1de","#e69a62","#8b6cff","#4b9dff","#2fd67b","#5eead4","#ff8fab","#a3e635","#fbbf24","#94a3b8","#64748b","#475569","#3f4a5c","#343d4d"];
+let ACTS={}, CFG=[], SRV={status:{},admin:false};
+const BASE=location.pathname.replace(/[^/]*$/,"");
+const ORDER="0x1bb43f2da90e35f7b0cf38521ca95a49e68eb42fac49924930a5bd73cdf7576c";
+const COMM_FROM="0xcd5eae9d9d0b96532bd1b7dbf6628ce436b2af735829087a03c548439f8bf850"; // OKX 手续费：从卖出币中扣（兑换前）
+const RL_SWAP="0xd65443291bb59863c3ddfe64892356e9f0c3888a4c99efd97df5c028cb5db267", RL_FEE="0x02b4603e6be0c4002f11c4445116c51a20adeecb33e1434306ec55378f75a099", RL_GAS="0xc6d99ee7574d9d88cc700f01e1ecbcc9cfed97d50310b48abc3a6dfde3ae2dc0"; // OKX 代付 Gas 合约事件
+const COMM_TO="0x3cfb523a4c38d88561dd3bf04805a31715c8b5fc468a03b8d684356f360dea99";   // OKX 手续费：从买入币中扣（兑换后）
+const WINS=[["10m",600],["1h",3600],["6h",21600],["24h",86400]];
+const PRICE={bnb:null,okb:null,eth:null,usd:1,u:{}};
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>(n<0?"-":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const f$=n=>Math.abs(n)>=1000?fmt(n):fmt(n,2);
+const short=a=>a.slice(0,6)+"…"+a.slice(-4);
+const sgn=n=>n>0?"+"+f$(n):n<0?f$(n):"$0";
+const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+
+/* ================= 状态 ================= */
+function initAct(A,S){
+  A.snap=S; A.addrs=S.addrs.slice(); A.ai=new Map(A.addrs.map((a,i)=>[a,i])); A.byAddr=new Map(); A.orders=[];
+  for(const r of S.o) addOrder(A,{a:r[0],b:S.base+r[1],qk:r[2],q:r[3],t:r[4],ta:r[5],buy:r[6],f:r[7]||0,n:r[8]||1,g:r[9]||0});
+  A.next=S.end+1; A.head=S.end; A.headTs=S.endTs||Math.floor(Date.now()/1000); A.rpcI=A.rpcI||0; A.busy=false; A.feed=A.feed||[]; A.flash=A.flash||new Set(); A.live=A.live||0; A.endBlock=null;
+  A.tokIdx=new Map(A.tokens.map((t,i)=>[t.a,i])); A.off=A.off||new Map(); A.unreg=A.unreg||new Set(); A.checked=A.checked||new Map(); A.offMeta=A.offMeta||{};
+  A.quotes=A.quotes||{}; if(A.gasFull===undefined) A.gasFull=(A.range||0)>=500; A.minTrade=A.minTrade||0; A.minVol=A.minVol||0; A.endLbl=A.endLbl||"结束";
+  if(A.reward==="tiers"&&!A.bands) A.bands=A.tiers.map(t=>[t[0],t[1],t[2]]);
+  if(A.offOnly){ A.blockTime=1; A.head=A.headTs; }
+}
+function applyClaims(A,C){ // 领奖记录 = 官方最终奖励：按金额排序即官方名次，交易量可精确反推
+  const got=C.got||{}; if(!Object.keys(got).length) return; const L0=(A.offSnap&&A.offSnap.list)||[];
+  if(!C.base||!C.T){ const P=L0.filter(x=>got[x[0]]&&x[2]>0).map(x=>[x[2],got[x[0]]]); if(P.length<5) return;
+    const mx=P.reduce((s,p)=>s+p[0],0)/P.length, my=P.reduce((s,p)=>s+p[1],0)/P.length;
+    const k=P.reduce((s,p)=>s+(p[0]-mx)*(p[1]-my),0)/(P.reduce((s,p)=>s+(p[0]-mx)**2,0)||1); C.base=my-k*mx; C.T=A.pool.bonus/k; C.N=Math.round(A.pool.base/C.base); } const now=Math.floor(Date.now()/1000);
+  const m=new Map(Object.entries(got).map(([a,v])=>[a.toLowerCase(),{amt:v,claim:true}]));
+  for(const [addr,r,v,est] of (A.offSnap&&A.offSnap.list)||[]) if(!m.has(addr)) m.set(addr,{amt:est,claim:false,v});
+  const arr=[...m].sort((x,y)=>y[1].amt-x[1].amt); A.claimN=Object.keys(got).length;
+  arr.forEach(([a,x],k)=>{ const i=idx(A,a), vol=x.v!=null?x.v:Math.max(0,(x.amt-C.base)*C.T/A.pool.bonus);
+    A.off.set(i,{r:k+1,v:vol,ut:now,est:x.amt,claim:x.claim}); A.unreg.delete(i); });
+  A.claimsC=C; A.offFinal=true; if(C.N) A.offMeta.N=C.N; A.offMeta.claims=A.claimN; }
+function loadOff(A,O){ if(A.poolId) A.offSnap=O; if(!O) return; if(O.final) A.offFinal=true;
+  if(A.poolId){ applyBankBoard(O.list||[],O.ut,O.participants,O.total,A); return; }
+  for(const [addr,[r,v,ut]] of Object.entries(O.m||{})){ const i=idx(A,addr); A.off.set(i,{r,v,ut}); A.checked.set(i,ut); A.unreg.delete(i); }
+  for(const addr of O.unreg||[]){ const i=idx(A,addr); A.unreg.add(i); A.checked.set(i,O.checkedAt); }
+  A.offMeta.ut=Math.max(A.offMeta.ut||0,O.ut||0);
+  if(O.daily){ A.offDay=A.offDay||{}; A.offDayFinal=A.offDayFinal||{}; A.offDayUt=A.offDayUt||{};
+    for(const [ps,P] of Object.entries(O.daily)){ const m=A.offDay[ps]=A.offDay[ps]||new Map(); for(const [addr,[r,v,ut]] of Object.entries(P.m||{})) m.set(idx(A,addr),{r,v,ut}); if(P.final) A.offDayFinal[ps]=true; A.offDayUt[ps]=P.ut; } }
+}
+// 日榜 / 总榜切换：日榜按本期时间过滤成交，用日榜奖励档位和日榜官方名次
+function boardList(A){ if(!A.daily) return []; const now=Date.now()/1000; return A.daily.periods.map(([ps,pe],i)=>({ps,pe,i:i+1,now:now>=ps&&now<pe,future:now<ps})); }
+function curBoard(A){ if(!A.daily) return "total"; const b=LS.get("okxBoard_"+A.key,null); if(b) return b; const t=boardList(A).find(x=>x.now); return t?String(t.ps):"total"; }
+function boardCtx(A){ const b=curBoard(A);
+  if(!A.daily||b==="total") return {total:true,tiers:A.tiersT||A.tiers};
+  const ps=+b, pe=ps+86400; return {total:false,ps,pe,tiers:A.daily.tiers,off:(A.offDay&&A.offDay[b])||new Map(),final:!!(A.offDayFinal&&A.offDayFinal[b]),ut:A.offDayUt&&A.offDayUt[b]}; }
+const getJ=async u=>{ const r=await fetch(BASE+u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status); return r.json(); };
+async function loadData(A,first){
+  let S=null,O=null; try{S=await getJ(`data/${A.key}.json`);}catch(e){} try{O=await getJ(`data/${A.key}_off.json`);}catch(e){}
+  let Cl=null; if(A.poolId&&A.claimStart&&Date.now()/1000>A.claimStart){ try{Cl=await getJ(`data/${A.key}_claims.json`);}catch(e){} }
+  if(!S) S={base:0,end:0,endTs:0,addrs:[],o:[]};
+  if(first||!A.snap){ initAct(A,S); }
+  else if(S.end>=A.snap.end){ // 用服务器最新快照替换，保留快照之后浏览器自己抓到的成交
+    const keep=A.orders.filter(o=>o.b>S.end&&o.h).map(o=>({...o,addr:A.addrs[o.a]})); const fd=A.feed.map(o=>({...o,addr:A.addrs[o.a]}));
+    const off=[...A.off].map(([i,v])=>[A.addrs[i],v]), unreg=[...A.unreg].map(i=>A.addrs[i]);
+    A.off=new Map(); A.unreg=new Set(); A.checked=new Map(); initAct(A,S);
+    for(const [a,v] of off) A.off.set(idx(A,a),v); for(const a of unreg) A.unreg.add(idx(A,a));
+    for(const o of keep){ o.a=idx(A,o.addr); addOrder(A,o); } A.next=Math.max(A.next,...keep.map(o=>o.b+1),S.end+1);
+    A.feed=fd.map(o=>({...o,a:idx(A,o.addr)})); }
+  loadOff(A,O); if(Cl) applyClaims(A,Cl);
+  loadClusters(A);
+}
+async function loadConfig(){
+  const j=await getJ("api/activities"); CFG=j.acts||[]; SRV.status=j.status||{}; SRV.admin=!!j.admin;
+  const vis=CFG.filter(c=>!c.hidden);
+  for(const c of vis){ if(!ACTS[c.key]){ ACTS[c.key]={...c}; await loadData(ACTS[c.key],true); } else Object.assign(ACTS[c.key],{endTs:c.endTs,name:c.name,done:c.done}); }
+  for(const k of Object.keys(ACTS)) if(!vis.some(c=>c.key===k)) delete ACTS[k];
+}
+function idx(A,addr){ if(!A.ai.has(addr)){A.ai.set(addr,A.addrs.length);A.addrs.push(addr);} return A.ai.get(addr); }
+function addOrder(A,o){ A.orders.push(o); let l=A.byAddr.get(o.a); if(!l){l=[];A.byAddr.set(o.a,l);} l.push(o); }
+function accN(B){ let best=null; for(const [i,o] of B.off) if(o.acc&&o.est&&B.offMeta.total){ const b=o.est-o.v/B.offMeta.total*B.pool.bonus; if(b>0) best=Math.round(B.pool.base/b); } return best; }
+function applyBankBoard(list,ut,participants,total,B){ const cur100=new Set(list.map(x=>x[0])); for(const [i,o] of B.off) if(!o.claim&&o.r>0&&!cur100.has(B.addrs[i])) o.r=null; // 以前上过前 100、现在掉出的：仍算已报名，但名次改为估算
+  for(const [addr,r,v,est] of list){ const i=idx(B,addr); B.off.set(i,{r,v,ut,est}); B.unreg.delete(i); }
+  const last=list[list.length-1]; B.offMeta={ut,participants,total,r100:last?last[2]:0,top:list};
+  { const P=list.filter(x=>x[2]>0&&x[3]>0).map(x=>[x[2],x[3]]);   // 官方预计奖励 = 均分额 + 交易量 × 系数 → 线性回归得到精确的获奖人数和获奖者总交易量
+    if(P.length>=5){ const mx=P.reduce((t,p)=>t+p[0],0)/P.length, my=P.reduce((t,p)=>t+p[1],0)/P.length;
+      const k=P.reduce((t,p)=>t+(p[0]-mx)*(p[1]-my),0)/(P.reduce((t,p)=>t+(p[0]-mx)**2,0)||1), base=my-k*mx;
+      if(base>0&&k>0){ B.offMeta.N=Math.min(B.pool.max,Math.round(B.pool.base/base)); B.offMeta.Tw=B.pool.bonus/k; } } }
+  if(B.claimsC){ B.offMeta.N=B.claimsC.N||B.offMeta.N; B.offMeta.claims=B.claimN; }
+}
+
+let cur=LS.get("okxAct","cc"); if(!ACTS[cur]) cur="cc";
+let win=LS.get("okxWin",3600), page=0, sortKey="vol", sortDir=-1, paused=false, timer=null, lastRows={}, favs=LS.get("okxFavs",[]);
+{ const old=localStorage.getItem("okxMe"); if(old&&!favs.length){try{const a=JSON.parse(old);}catch(e){ if(/^0x[0-9a-f]{40}$/i.test(old)) favs=[{a:old.toLowerCase(),n:"主号"}]; }} }
+const favSet=()=>new Map(favs.map(f=>[f.a,f.n]));
+
+/* ================= RPC ================= */
+async function rpc(A,method,params){
+  let err; for(let t=0;t<A.rpcs.length*3;t++){ const url=A.rpcs[A.rpcI%A.rpcs.length];
+    try{ const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});
+      if(r.status===429){A.rpcI++;await sleep(700*(t+1));continue;}
+      const j=await r.json(); if(j.error) throw new Error(j.error.message||JSON.stringify(j.error)); return j.result;
+    }catch(e){err=e;A.rpcI++;await sleep(250);} }
+  throw err;
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function logs(A,a,b){ try{
+    if(A.lev){ const L=await rpc(A,"eth_getLogs",[{fromBlock:"0x"+a.toString(16),toBlock:"0x"+b.toString(16),address:[A.router,A.lev]}]);
+      const lv=new Set(L.filter(l=>l.address.toLowerCase()===A.lev).map(l=>l.transactionHash));
+      return L.filter(l=>lv.has(l.transactionHash)&&l.address.toLowerCase()===A.router&&[ORDER,COMM_FROM,COMM_TO].includes(l.topics[0])); }
+    const L1=await rpc(A,"eth_getLogs",[{fromBlock:"0x"+a.toString(16),toBlock:"0x"+b.toString(16),address:A.router,topics:[[ORDER,COMM_FROM,COMM_TO]]}]);
+    if(!A.relayer) return L1;
+    return L1.concat(await rpc(A,"eth_getLogs",[{fromBlock:"0x"+a.toString(16),toBlock:"0x"+b.toString(16),address:A.relayer,topics:[[RL_SWAP,RL_FEE,RL_GAS]]}]));}
+  catch(e){ if(b-a<20) throw e; const m=(a+b)>>1; return (await logs(A,a,m)).concat(await logs(A,m+1,b)); } }
+function decodeRelayer(A,ls){ // 代付 Gas 交易：用户地址在事件里，手续费和代付 Gas 费从计价币里扣
+  const w=(d,i)=>d.slice(2+64*i,2+64*(i+1)), ad=x=>"0x"+x.slice(-40), fee={}, gas={}, out=[];
+  for(const l of ls) if(l.topics[0]===RL_FEE||l.topics[0]===RL_GAS){ const t=ad(l.topics[1]), m=l.topics[0]===RL_FEE?fee:gas; m[t]=(m[t]||0n)+BigInt("0x"+w(l.data,2)); }
+  for(const l of ls){ if(l.topics[0]!==RL_SWAP||l.topics.length<4) continue; const user=ad(l.topics[1]), ft=ad(l.topics[2]), tt=ad(l.topics[3]);
+    const fa=BigInt("0x"+w(l.data,0)), ra=BigInt("0x"+w(l.data,1)); let ti,q,ta,buy,qa;
+    if(A.tokIdx.has(ft)&&A.quotes[tt]){ ti=A.tokIdx.get(ft); qa=tt; buy=0; ta=Number(fa)/10**A.tokens[ti].d; q=Number(ra)/10**A.quotes[tt][1]; }
+    else if(A.tokIdx.has(tt)&&A.quotes[ft]){ ti=A.tokIdx.get(tt); qa=ft; buy=1; q=Number(fa)/10**A.quotes[ft][1]; ta=Number(ra)/10**A.tokens[ti].d; }
+    else continue; const qd=A.quotes[qa][1];
+    out.push({a:idx(A,user),b:parseInt(l.blockNumber,16),qk:A.quotes[qa][0]==="usd"?0:1,q,t:ti,ta,buy,f:Number(fee[qa]||0n)/10**qd,g:Number(gas[qa]||0n)/10**qd,h:l.transactionHash}); }
+  return out; }
+function decodeTx(A,ls){ // 一笔交易里的 OrderRecord + 手续费事件
+  if(A.relayer&&ls.some(l=>l.address.toLowerCase()===A.relayer)) return decodeRelayer(A,ls);
+  const w=(d,i)=>d.slice(2+64*i,2+64*(i+1)), ad=x=>"0x"+x.slice(24), out=[];
+  for(const l of ls){ if(l.topics[0]!==ORDER) continue; const d=l.data, li=parseInt(l.logIndex,16);
+    const ft=ad(w(d,0)), tt=ad(w(d,1)), snd=ad(w(d,2)); let fa=BigInt("0x"+w(d,3)), ra=BigInt("0x"+w(d,4));
+    let cfa=0n,cta=0n; const oi=ls.filter(m=>m.topics[0]===ORDER).map(m=>parseInt(m.logIndex,16));
+    const prev=Math.max(-1,...oi.filter(x=>x<li)), nxt=Math.min(1e9,...oi.filter(x=>x>li));
+    for(const m of ls){ const lj=parseInt(m.logIndex,16), tok=ad(w(m.data,0)); // 多条手续费事件（OKX + 推荐/渠道）全部累加
+      const own=(prev<lj&&lj<li)||(li<lj&&lj<nxt&&nxt===1e9&&m.topics[0]===COMM_TO); if(!own) continue;
+      if(m.topics[0]===COMM_FROM&&tok===ft) cfa+=BigInt("0x"+w(m.data,1));
+      if(m.topics[0]===COMM_TO&&tok===tt) cta+=BigInt("0x"+w(m.data,1)); }
+    let ti,q,ta,buy,fee,qa;
+    if(A.tokIdx.has(ft)&&A.quotes[tt]){ ti=A.tokIdx.get(ft); qa=tt; const qd=A.quotes[tt][1], td=A.tokens[ti].d; buy=0;
+      ta=Number(fa+cfa)/10**td; q=Number(ra)/10**qd; fee=Number(cfa)/10**td*(ta?q/ta:0)+Number(cta)/10**qd; }
+    else if(A.tokIdx.has(tt)&&A.quotes[ft]){ ti=A.tokIdx.get(tt); qa=ft; const qd=A.quotes[ft][1], td=A.tokens[ti].d; buy=1;
+      q=Number(fa+cfa)/10**qd; ta=Number(ra)/10**td; fee=Number(cfa)/10**qd+(ra+cta>0n?Number(cta)/10**td*(Number(fa)/10**qd)/(Number(ra+cta)/10**td):0); }
+    else continue;
+    out.push({a:idx(A,snd),b:parseInt(l.blockNumber,16),qk:A.quotes[qa][0]==="usd"?0:1,q,t:ti,ta,buy,f:fee,h:l.transactionHash}); }
+  return out; }
+const PH={bnb:new Map(),okb:new Map(),eth:new Map()};
+async function priceHistory(){
+  for(const [k,inst] of [["bnb","BNB-USDT"],["okb","OKB-USDT"],["eth","ETH-USDT"]]){ let after=""; 
+    for(let p=0;p<3;p++){ try{ const r=await fetch(`https://www.okx.com/api/v5/market/history-candles?instId=${inst}&bar=1H&limit=100${after?"&after="+after:""}`).then(r=>r.json());
+      const d=r.data||[]; if(!d.length) break; for(const c of d) PH[k].set(Math.floor(+c[0]/3600000),(+c[1]+ +c[4])/2); after=d[d.length-1][0];
+      if(+after/1000<Math.min(...Object.values(ACTS).map(A=>A.startTs),Date.now()/1000-86400*3)-3600) break; }catch(e){break;} } }
+  for(const k in ACTS) for(const o of ACTS[k].orders) o.u=undefined;
+}
+async function prices(){
+  for(const u of ["https://www.okx.com/api/v5/market/tickers?instType=SPOT"]){ try{const r=await fetch(u).then(r=>r.json());
+    for(const x of r.data||[]){ if(x.instId==="BNB-USDT")PRICE.bnb=+x.last; if(x.instId==="OKB-USDT")PRICE.okb=+x.last; if(x.instId==="ETH-USDT")PRICE.eth=+x.last; PRICE.u[x.instId]=+x.last; } }catch(e){} }
+  for(const A of Object.values(ACTS)) if(!PRICE[A.native]&&A.snap&&typeof A.snap.px==='number') PRICE[A.native]=A.snap.px;
+}
+async function poll(A,ui){
+  if(A.offOnly){ A.headTs=A.head=Math.floor(Date.now()/1000); return; }
+  if(A.done||(A.snap&&A.snap.endTs>=A.endTs)){ A.final=true; return; }
+  if(A.busy||paused||!A.rpcs) return; A.busy=true;
+  try{
+    const head=parseInt(await rpc(A,"eth_blockNumber",[]),16);
+    if(head-A.next>1800/A.blockTime&&A.headTs<A.endTs+600){ A.busy=false; if(A.key===cur) setStat(false,`服务器同步中 ${SRV.status[A.key]||""}`); await loadConfigSoft(); await loadData(A); if(A.key===cur) render(); return; }
+    const blk=await rpc(A,"eth_getBlockByNumber",["0x"+head.toString(16),false]); A.head=head; A.headTs=parseInt(blk.timestamp,16);
+    if(A.headTs>A.endTs&&A.endBlock===null) A.endBlock=head-Math.round((A.headTs-A.endTs)/A.blockTime);
+    const to=A.endBlock!==null?Math.min(head,A.endBlock):head, from=A.next, total=to-from+1, big=total>A.range*6;
+    for(let a=from;a<=to;){ const batch=[]; for(let i=0;i<(A.range<=100?4:2)&&a<=to;i++){const b=Math.min(a+A.range-1,to);batch.push([a,b]);a=b+1;}
+      const res=await Promise.all(batch.map(([x,y])=>logs(A,x,y)));
+      for(const L of res){ const g=new Map(); for(const l of L){ if(!g.has(l.transactionHash)) g.set(l.transactionHash,[]); g.get(l.transactionHash).push(l); } for(const ls of g.values()) for(const o of decodeTx(A,ls)){ addOrder(A,o); A.live++; if(!big||to-o.b<200/A.blockTime){A.feed.unshift(o);A.flash.add(o.a);} if(!A.checked.has(o.a)) offQueue(A,o.a); } }
+      A.next=batch[batch.length-1][1]+1;
+      if(big&&ui){ $("prog").style.width=((A.next-from)/total*100).toFixed(1)+"%"; setStat(false,`追赶区块 ${((A.next-from)/total*100).toFixed(0)}%`); }
+    }
+    A.feed=A.feed.slice(0,60); $("prog").style.width="0";
+    if(A.key===cur){ render(); setStat(true,`${A.chain} #${A.head.toLocaleString()} · ${new Date(A.headTs*1000).toLocaleTimeString("zh-CN",{hour12:false})}`); setTimeout(()=>A.flash.clear(),2500); }
+  }catch(e){ if(A.key===cur) setStat(false,"链上同步失败，重试中"); }
+  finally{ A.busy=false; }
+}
+function setStat(ok,msg){ $("dot").className="dot"+(ok&&!paused?" live":""); $("stat").textContent=paused?"已暂停":msg; }
+
+/* ================= 官方接口（跨域代理） ================= */
+const OKX="https://web3.okx.com";
+let proxyMode=null; // local | custom | public | direct | none
+let bridgeReady=false; const bridgePing=()=>{};
+async function okx(path){ // 官方接口统一走服务端 /okx/ 代理（服务器可直连 OKX）
+  let err; for(let i=0;i<3;i++){ try{ const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),15000);
+      const r=await fetch(BASE+"okx"+path,{signal:ctl.signal,cache:"no-store"}); clearTimeout(tm);
+      if(r.status===429){ await sleep(1500*(i+1)); continue; } const j=await r.json(); if(j.code!==0){ const e=new Error("API "+j.code); throw e; }
+      if(proxyMode!=="local"){proxyMode="local";showProxy();} return j.data; }catch(e){ err=e; await sleep(600); } }
+  proxyMode="none"; showProxy(); throw err||new Error("官方接口不可用"); }
+const heavyOK=()=>proxyMode==="local";
+function showProxy(){ const m={bridge:["浏览器助手","live"],local:["服务器代理","live"],custom:["自定义代理","live"],direct:["直连","live"],public:["公共代理（受限）",""],none:["不可用","bad"]}[proxyMode]||["检测中",""];
+  $("odot").className="dot "+m[1]; $("ostat").textContent="官方接口："+m[0]; }
+const TC=()=>Object.values(ACTS).filter(A=>A.actId);
+const rankPath=(A,a)=>`/priapi/v1/dapp/competition/queryPnlRank?walletAddress=${a}&activityId=${A.actId}&sortType=5&t=${Date.now()}`;
+async function tcQuery(A,a){ const d=await okx(rankPath(A,a)); const ut=Math.floor((d.rankUpdateTime||Date.now())/1000); const i=idx(A,a);
+  const me=d.myPnlRankInfo; A.checked.set(i,Date.now()/1000);
+  if(me){ A.off.set(i,{r:me.currentRank,v:+me.volume,ut}); A.unreg.delete(i);} else { A.unreg.add(i); A.off.delete(i); }
+  for(const x of d.pnlRankInfos||[]){ const j=idx(A,x.walletAddress); A.off.set(j,{r:x.currentRank,v:+x.volume,ut}); A.unreg.delete(j); A.checked.set(j,Date.now()/1000); }
+  A.offMeta.ut=ut; return me; }
+const m7Query=a=>a.startsWith("acc:")?Promise.resolve():Promise.all(TC().filter(A=>A.offOnly?!a.startsWith("0x"):a.startsWith("0x")).map(A=>tcQuery(A,a).catch(()=>{})));
+async function bankBoard(){ for(const B of Object.values(ACTS).filter(x=>x.poolId)){ if(B.headTs>B.endTs+3600&&B.offMeta.ut>B.endTs) continue;
+  try{ const d=await okx(`/priapi/v1/dapp/boost/launchpool/leaderboard?launchpoolId=${B.poolId}&t=${Date.now()}`); const ut=Math.floor(Date.now()/1000);
+  applyBankBoard(d.list.map(x=>[x.walletAddress,x.rank,x.boostVolume,x.estimatedReward]),ut,d.participants,d.totalBoostVolume,B); }catch(e){ if(B.key===cur) throw e; } } }
+const Q={busy:false,items:[]};
+function offQueue(A,i){ if(!A.actId) return; if(!Q.items.some(x=>x[0]===A&&x[1]===i)) Q.items.push([A,i]); }
+async function drainQueue(){ if(Q.busy||!Q.items.length||proxyMode==="none") return; Q.busy=true;
+  try{ const conc=proxyMode==="local"?2:heavyOK()?6:1, lim=proxyMode==="local"?40:heavyOK()?400:2; const take=Q.items.splice(0,lim);
+    for(let k=0;k<take.length;k+=conc) await Promise.all(take.slice(k,k+conc).map(([A,i])=>tcQuery(A,A.addrs[i]).catch(()=>{})));
+  }finally{Q.busy=false;} }
+const fullBusy={};
+async function tcFull(A){ if(fullBusy[A.key]||!heavyOK()||proxyMode==="local") return; // 服务端模式下由服务器做全量校准 fullBusy[A.key]=true;
+  try{ const rows=(lastRows[A.key]||[]).filter(r=>r.a>=0&&r.status!=="unreg").slice(0,A.tiers[A.tiers.length-1][1]+400).map(r=>r.a);
+    const cc=proxyMode==="bridge"?4:8; let done=0; for(let k=0;k<rows.length;k+=cc){ await Promise.all(rows.slice(k,k+cc).map(i=>tcQuery(A,A.addrs[i]).catch(()=>{}))); done+=cc; if(A.key===cur) $("ostat").textContent=`官方全量校准 ${Math.min(100,done/rows.length*100).toFixed(0)}%`; }
+    A.offMeta.full=Date.now()/1000; showProxy(); if(cur===A.key) render();
+  }finally{fullBusy[A.key]=false;} }
+async function favOfficial(){ try{ await bankBoard().catch(()=>{});
+    const fs=favs.map(f=>f.a); for(let k=0;k<fs.length;k+=3) await Promise.all(fs.slice(k,k+3).map(a=>m7Query(a)));
+  }catch(e){} render(); }
+const UUID=/(?!)/;
+const lastUt={};
+async function dailyTick(A){ const now=Date.now()/1000; for(const x of boardList(A)){ if(!(now>=x.ps&&now<x.pe+3600)) continue;
+    try{ const d=await okx(`/priapi/v1/dapp/competition/queryDailyRank?activityId=${A.actId}&periodStart=${x.ps}&t=${Date.now()}`); const ut=Math.floor((d.rankUpdateTime||0)/1000);
+      A.offDay=A.offDay||{}; A.offDayUt=A.offDayUt||{}; const m=A.offDay[x.ps]=A.offDay[x.ps]||new Map();
+      for(const y of d.rankInfos||[]) m.set(idx(A,y.walletAddress),{r:y.currentRank,v:+y.volume,ut}); A.offDayUt[x.ps]=ut;
+      for(const f of favs.filter(f=>f.a.startsWith("0x"))){ try{ const e=await okx(`/priapi/v1/dapp/competition/queryDailyRank?activityId=${A.actId}&periodStart=${x.ps}&walletAddress=${f.a}&t=${Date.now()}`); const me=e.myRankInfo;
+          if(me&&+me.volume>0) m.set(idx(A,f.a),{r:me.currentRank,v:+me.volume,ut}); }catch(err){} }
+    }catch(e){} } }
+async function officialTick(){ if(document.hidden) return;
+  for(const A of TC()){ if(A.headTs>A.endTs+3600&&A.offMeta.full) continue;
+    try{ const pa=favs.find(f=>A.offOnly?!f.a.startsWith("0x"):f.a.startsWith("0x"))?.a||(A.offOnly?"11111111111111111111111111111111":"0x0000000000000000000000000000000000000000"); const d=await okx(rankPath(A,pa)); const ut=Math.floor(d.rankUpdateTime/1000);
+      for(const x of d.pnlRankInfos||[]){ const j=idx(A,x.walletAddress); A.off.set(j,{r:x.currentRank,v:+x.volume,ut}); A.unreg.delete(j); A.checked.set(j,ut);}
+      A.offMeta.ut=ut; if(d.myPnlRankInfo){const i=idx(A,pa); A.off.set(i,{r:d.myPnlRankInfo.currentRank,v:+d.myPnlRankInfo.volume,ut});}
+      if(ut!==lastUt[A.key]){ lastUt[A.key]=ut; const fs=favs.map(f=>f.a).filter(a=>a!==pa&&(A.offOnly?!a.startsWith("0x"):a.startsWith("0x"))); for(let k=0;k<fs.length;k+=3) await Promise.all(fs.slice(k,k+3).map(a=>tcQuery(A,a).catch(()=>{}))); if(heavyOK()&&A.headTs<=A.endTs+900&&A.key===cur) tcFull(A); }
+    }catch(e){} }
+  try{ await bankBoard(); }catch(e){}
+  for(const A of TC()) if(A.daily) await dailyTick(A);
+  drainQueue(); render();
+}
+
+/* ================= 收藏地址 Gas（逐笔回执） ================= */
+const GAS=LS.get("okxGas",{}); let gasBusy=false;
+const GAS_TOKEN_TOPIC="0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const GAS_DEF={bnb:0.00005,okb:0.0000005,eth:0.000002,usd:0.01};
+function gasOf(A,addr){ if(A.offOnly||!addr||!addr.startsWith('0x')) return 0; const g=GAS[A.key]?.[addr]; if(!g||!g.done) return favSet().has(addr)?null:0; const vs=Object.values(g.tx); if(!vs.length) return null; let s=0; for(const v of vs) s+=v||0; return s*(PRICE[A.native]||0); }
+async function gasScan(){ if(gasBusy) return; gasBusy=true;
+  try{ for(const k in ACTS){ const A=ACTS[k]; if(A.offOnly) continue; if(!A.gasFull) { for(const f of favs.filter(x=>x.a.startsWith("0x"))){ GAS[k]=GAS[k]||{}; const g=GAS[k][f.a]=GAS[k][f.a]||{tx:{},to:0,done:false};
+          const L=(A.byAddr.get(A.ai.get(f.a))||[]).filter(o=>o.h&&!(o.h in g.tx)); // X Layer：仅页面打开后的新成交可取回执
+          for(const o of L){ try{ const r=await rpc(A,"eth_getTransactionReceipt",[o.h]); g.tx[o.h]=r.from.toLowerCase()===f.a?Number(BigInt(r.gasUsed)*BigInt(r.effectiveGasPrice||r.gasPrice||0))/1e18:0; }catch(e){} }
+          g.done=true; } continue; }
+      const pad=a=>"0x"+"0".repeat(24)+a.slice(2), start=A.snap.base, head=A.head;
+      for(const f of favs.filter(x=>x.a.startsWith("0x"))){ GAS[k]=GAS[k]||{}; const g=GAS[k][f.a]=GAS[k][f.a]||{tx:{},to:start-1,done:false};
+        const getL=async(a,b,tok,topics)=>{ try{ return await rpc(A,"eth_getLogs",[{fromBlock:"0x"+a.toString(16),toBlock:"0x"+b.toString(16),address:tok,topics}]); }
+          catch(e){ if(b-a<200) throw e; const m=(a+b)>>1; return (await getL(a,m,tok,topics)).concat(await getL(m+1,b,tok,topics)); } };
+        while(g.to<head){ const jobs=[]; let a=g.to+1;
+          for(let i=0;i<4&&a<=head;i++){ const b=Math.min(a+A.range-1,head); for(const tok of A.tokens) for(const topics of [[GAS_TOKEN_TOPIC,pad(f.a)],[GAS_TOKEN_TOPIC,null,pad(f.a)]]) jobs.push(getL(a,b,tok.a,topics)); a=b+1; }
+          const res=await Promise.all(jobs); for(const L of res) for(const l of L) if(!(l.transactionHash in g.tx)) g.tx[l.transactionHash]=null;
+          g.to=a-1; LS.set("okxGas",GAS); }
+        for(const h of Object.keys(g.tx)) if(g.tx[h]===null){ try{ const r=await rpc(A,"eth_getTransactionReceipt",[h]); g.tx[h]=r.from.toLowerCase()===f.a?Number(BigInt(r.gasUsed)*BigInt(r.effectiveGasPrice||r.gasPrice||0))/1e18:0; }catch(e){ delete g.tx[h]; } }
+        g.done=true; LS.set("okxGas",GAS); } } }
+  catch(e){} finally{ gasBusy=false; render(); } }
+
+/* ================= Solana 收藏地址链上统计 ================= */
+const SOL_ROUTER="proVF4pMXVaYqmy4NjniPh4pqKNfMmsihgd4wdkCX3u", WSOL="So11111111111111111111111111111111111111112";
+const SOL_Q={"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB":1,"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v":1,"2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH":1,"2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo":1};
+const SOLC=LS.get("okxSolTx",{}); let solBusy=false;
+const solRpcUrl=()=>LS.get("okxSolRpc","")||"https://solana-rpc.publicnode.com";
+async function solRpc(m,p){ for(let i=0;i<4;i++){ try{ const r=await fetch(solRpcUrl(),{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:m,params:p})}); const j=await r.json(); if(j.error) throw new Error(j.error.message); return j.result; }catch(e){ await sleep(800*(i+1)); } } return null; }
+function solStat(A,addr){ const c=SOLC[A.key+"|"+addr]; if(!c) return null; const sp=PRICE.u["SOL-USDT"]||0; let n=0,buy=0,sell=0,net=0,gas=0;
+  for(const t of Object.values(c.tx)){ if(!t) continue; gas+=t.g; if(!t.dt) continue; const q=t.dq+t.ds*sp; n++; net+=t.dt; if(t.dt>0) buy+=-q; else sell+=q; }
+  return {n,buy,sell,net,gas:gas*sp,since:c.oldest,partial:c.partial}; }
+async function solScan(){ if(solBusy) return; solBusy=true;
+  try{ for(const A of Object.values(ACTS)){ if(!A.offOnly||A.chain!=="Solana") continue; const mint=A.tokens[0].a;
+      for(const f of favs.filter(x=>!x.a.startsWith("0x"))){ const key=A.key+"|"+f.a, c=SOLC[key]=SOLC[key]||{tx:{},oldest:0,partial:false}; let before=null, page=0;
+        while(page++<20){ const p={limit:1000}; if(before) p.before=before; const r=await solRpc("getSignaturesForAddress",[f.a,p]); if(!r||!r.length) break;
+          let stop=false; for(const x of r){ if(x.blockTime<A.startTs){stop=true;break;} if(x.blockTime>A.endTs||x.err) continue; if(x.signature in c.tx){stop=true;break;} c.tx[x.signature]=null; c.oldest=c.oldest?Math.min(c.oldest,x.blockTime):x.blockTime; }
+          if(stop||r.length<1000) break; before=r[r.length-1].signature; }
+        const fa=await solRpc("getFirstAvailableBlock",[]), ob=fa?await solRpc("getBlockTime",[fa]):null; c.partial=!!(ob&&ob>A.startTs);
+        for(const sig of Object.keys(c.tx)){ if(c.tx[sig]!==null) continue;
+          const t=await solRpc("getTransaction",[sig,{encoding:"jsonParsed",maxSupportedTransactionVersion:0}]); if(!t){continue;}
+          const keys=t.transaction.message.accountKeys.map(k=>k.pubkey), payer=keys[0]===f.a, fee=t.meta.fee/1e9;
+          const bal=(arr)=>{const m={}; for(const b of arr||[]) if(b.owner===f.a) m[b.mint]=(m[b.mint]||0)+(+b.uiTokenAmount.uiAmount||0); return m;};
+          const pre=bal(t.meta.preTokenBalances), post=bal(t.meta.postTokenBalances), d=m=>(post[m]||0)-(pre[m]||0);
+          let rec={g:payer?fee:0,dt:0,dq:0,ds:0};
+          if(keys.includes(SOL_ROUTER)&&Math.abs(d(mint))>0){ const i0=keys.indexOf(f.a); rec.dt=d(mint);
+            for(const m in SOL_Q) rec.dq+=d(m); rec.ds=d(WSOL)+(i0>=0?(t.meta.postBalances[i0]-t.meta.preBalances[i0])/1e9+(payer?fee:0):0); }
+          c.tx[sig]=rec; }
+        LS.set("okxSolTx",SOLC); render(); } } }
+  catch(e){} finally{ solBusy=false; } }
+
+/* ================= 计算 ================= */
+const qUsd=(A,o)=>{ if(o.qk===0) return o.q; if(o.u!==undefined) return o.u;
+  const h=Math.floor((A.headTs-(A.head-o.b)*A.blockTime)/3600), px=PH[A.native].get(h)??PH[A.native].get(h-1);
+  if(px){ o.u=o.q*px; return o.u; } return o.q*PRICE[A.native]; };
+const tsBlock=(A,t)=>A.head-Math.round((A.headTs-t)/A.blockTime);
+function tokenPrices(A){ const px=A.tokens.map(()=>[]);
+  for(let i=A.orders.length-1;i>=0;i--){const o=A.orders[i]; if(o.qk!==0||o.ta<=0) continue; const p=px[o.t]; if(p.length<25) p.push(o.q/o.ta); if(px.every(x=>x.length>=25)) break;}
+  return px.map((p,i)=>{if(!p.length) return PRICE.u[A.tokens[i].s.toUpperCase()+"-USDT"]||0; p.sort((a,b)=>a-b); return p[p.length>>1];}); }
+function aggregate(A,cut,opt){
+  let unregN=0; const nT=A.tokens.length, out=[], keys=new Set([...A.byAddr.keys(),...A.off.keys()]);
+  for(const a of keys){
+    const L=A.byAddr.get(a)||[], o=A.off.get(a); const ub=o?tsBlock(A,o.ut):null;
+    let vol=0,n=0,buy=0,sell=0,last=0,cu=0,fee=0,mt=0,gt=0; const inv=new Float64Array(nT), tv=new Float64Array(nT), bq=new Float64Array(nT), bu=new Float64Array(nT), sq=new Float64Array(nT), su=new Float64Array(nT);
+    for(const x of L){ if(cut!=null&&x.b>cut) continue; if(A.br&&(x.b<A.br[0]||x.b>A.br[1])) continue; const u=qUsd(A,x); if(u<A.minTrade) continue;
+      const fu=x.f?(x.qk?x.f*(u/x.q||0):x.f):0, gu=x.g?(x.qk?x.g*(u/x.q||0):x.g):0; fee+=fu; gt+=gu; const vu=x.buy?u-fu-gu:u; vol+=vu;n+=x.n||1; mt=Math.max(mt,u/(x.n||1)); if(x.buy){buy+=u;inv[x.t]+=x.ta;bq[x.t]+=x.ta;bu[x.t]+=u-fu-gu;}else{sell+=u;inv[x.t]-=x.ta;sq[x.t]+=x.ta;su[x.t]+=u+fu+gu;} tv[x.t]+=u; if(x.b>last)last=x.b; if(ub!=null&&x.b<=ub) cu+=vu; }
+    let status, v=vol;
+    if(!o&&A.regT&&A.regT.has(a)){ status="reg"; }   // 日榜：总榜已确认报名，但不在日榜官方名单内
+    else if(o){ status="reg"; const mult=cu>1?Math.min(1.2,Math.max(1,o.v/cu)):1; v=Math.max(0,o.v+(vol-cu)*mult); } // 官方含加成（如 Web 端 1.2 倍）时，快照后的增量按同比例估算
+    else if(status!=="reg"&&A.unreg.has(a)) status="unreg";
+    else if(A.poolId&&A.offMeta.r100&&vol>A.offMeta.r100*1.02&&(cut==null||cut>=tsBlock(A,A.offMeta.ut))) status="unreg";
+    else status="new";
+    if(status==="unreg"&&cut==null) unregN++;
+    if(status==="unreg"&&!opt.unreg) continue; if(status==="new"&&!opt.fresh) continue;
+    if(v<=0) continue;
+    out.push({a,vol:v,chainVol:vol,mt,gt,n,buy,sell,fee,inv,tv,bq,bu,sq,su,last,status,offRank:o?o.r:null,offEst:o?o.est:null,offUt:o?o.ut:0,claim:o?o.claim:false});
+  }
+  if(cut==null) A.unregN=unregN;
+  const orank=r=>r.offRank>0?r.offRank:1e9;
+  if(A.offFinal&&cut==null){ // 活动结束：直接采用官方最终名次，官方未上榜的排在后面
+    out.sort((x,y)=>orank(x)-orank(y)||y.vol-x.vol); let mx=0; for(const r of out) if(r.offRank>0) mx=Math.max(mx,r.offRank);
+    let k=mx; out.forEach(r=>{ r.rank=r.offRank>0?r.offRank:++k; }); return out; }
+  out.sort((x,y)=>(y.vol-x.vol)||(orank(x)-orank(y))); out.forEach((r,i)=>r.rank=i+1); return out;
+}
+function tierOf(A,rank){ const b=A.bands; for(let i=0;i<b.length;i++) if(rank>=b[i][0]&&rank<=b[i][1]) return i; return -1; }
+let PRIOR=null; const PSET=new Set();
+async function loadPrior(){ try{ PRIOR=await getJ("data/prior.json"); PSET.clear(); for(const a of PRIOR.addrs||[]) PSET.add(a); }catch(e){} }
+const bucket=v=>Math.min(6,Math.max(0,Math.floor(Math.log10(Math.max(v,1))*2)-2));
+function probRank(A,rows){ // 报名期间的名次估算：每个地址的报名概率 × 排在前面的人数
+  // 报名概率来自历史活动的领奖结果（历史获奖者 / 来回刷量 / 交易量级），再用官方公布的总交易量整体校准
+  const T=PRIOR&&PRIOR.table||{}; const odds=(p,s)=>{const o=p/(1-p+1e-9)*s; return o/(1+o);};
+  for(const r of rows){ const rt=Math.min(r.buy,r.sell)/Math.max(r.buy,r.sell,1e-9);
+    r.p0=r.status==="reg"?1:r.status==="unreg"?0:(T[(PSET.has(r.addr)?"P":"N")+(rt>.9&&r.mt>0&&r.chainVol/r.mt>=6?"R":"X")+"|"+bucket(r.vol)]??0.3); }
+  // 总交易量校准：只调整 $1,000 以上地址的概率，倍数限制在 0.2–5，避免把小额地址的概率抬得过高
+  let s=1; const tot=A.offMeta.total, big=r=>r.vol>=1000;
+  if(tot){ const fixed=rows.reduce((t,r)=>t+(r.p0===1?r.vol:(r.p0>0&&r.p0<1&&!big(r)?r.vol*r.p0:0)),0);
+    const f=k=>fixed+rows.reduce((t,r)=>t+(r.p0>0&&r.p0<1&&big(r)?r.vol*odds(r.p0,k):0),0);
+    let lo=0.2,hi=5; if(f(hi)<=tot) s=hi; else if(f(lo)>=tot) s=lo; else { for(let i=0;i<40;i++){ const m=Math.sqrt(lo*hi); if(f(m)<tot) lo=m; else hi=m; } s=lo; } }
+  A.oddsScale=s;
+  // 名次严格按交易量顺序：官方前 100 用官方名次；可能已报名的依次往后排、不重复；大概率未报名的保留在原位置但不占名次
+  for(const r of rows) r.preg=r.p0===1||r.p0===0?r.p0:odds(r.p0,big(r)?s:1);
+  // 计入阈值偏保守：宁可多算报名者，让估算门槛只会高于、不会低于官方；再用官方获奖者总交易量校验
+  let tau=0.3; const NN=A.offMeta.N, Tw=A.offMeta.Tw;
+  if(NN&&Tw){ const topSum=t=>{ let c=0,sv=0; for(const r of rows){ if(r.status==="reg"||r.preg>=t){ c++; sv+=r.vol; if(c>=NN) break; } } return c>=NN?sv:Infinity; };
+    A.topSum=topSum(tau); }
+  if(rows.length>1000) A.tau=tau; let k=0;   // 名次严格按交易量顺序连续编号；官方名次只作为标签显示
+  for(const r of rows){ r.unlikely=false;
+    const official=r.status==="reg"&&r.offRank>0;
+    if(official||r.status==="reg"||r.preg>=tau){ r.rank=++k; r.rankEst=!official; }
+    else { r.rank=null; r.rankEst=true; r.unlikely=true; } } }
+function compute(A){
+  if(!A.daily) return compute0(A);
+  const bc=boardCtx(A), sv={off:A.off,tiers:A.tiers,bands:A.bands,offFinal:A.offFinal,br:A.br,regT:A.regT,head:A.head};
+  A.tiersT=A.tiersT||A.tiers;
+  if(!bc.total){ let dm=bc.off;
+    if(bc.ut){ dm=new Map(bc.off); for(const [i,o] of A.off) if(!dm.has(i)) dm.set(i,{r:null,v:0,ut:bc.ut}); }   // 已报名但不在日榜名单：日榜官方量为 0，只算之后的链上增量
+    else A.regT=new Set(A.off.keys());
+    A.off=dm; A.tiers=bc.tiers; A.bands=bc.tiers.map(t=>[t[0],t[1],t[2]]); A.offFinal=bc.final;
+    A.br=[tsBlock(A,bc.ps),tsBlock(A,bc.pe)-1]; if(Date.now()/1000>bc.pe) A.head=Math.min(A.head,A.br[1]); }
+  else { A.tiers=A.tiersT; A.bands=A.tiers.map(t=>[t[0],t[1],t[2]]); A.br=null; A.regT=null; }
+  try{ const res=compute0(A); A.viewTiers=A.tiers; A.viewBands=A.bands; return res; }
+  finally{ A.off=sv.off; A.offFinal=sv.offFinal; A.br=null; A.regT=null; A.head=sv.head; if(!bc.total){ A.tiersD=A.tiers; } A.tiers=bc.tiers; A.bands=bc.tiers.map(t=>[t[0],t[1],t[2]]); } }
+function compute0(A){
+  const opt={unreg:LS.get("optUnreg",false),fresh:LS.get("optFresh",true)};
+  const tp=tokenPrices(A), rows=aggregate(A,null,opt);
+  if(A.reward==="xlaunch"&&!A.offFinal) probRank(A,rows);
+  const prevRows=aggregate(A,A.head-Math.round(win/A.blockTime),opt); for(const r of prevRows) r.addr=A.addrs[r.a]; if(A.reward==="xlaunch"&&!A.offFinal) probRank(A,prevRows); const prev=new Map(prevRows.map(r=>[r.a,r]));
+  const elig=rows.filter(r=>r.vol>=A.minVol); let N,T=0,base=0;
+  if(A.reward==="xlaunch"){ N=A.offMeta.N?Math.max(A.offMeta.N,Math.min(elig.filter(r=>r.status==="reg").length,A.pool.max)):Math.min(elig.length,A.pool.max); N=Math.max(1,Math.min(N,A.pool.max));
+    for(const r of elig.filter(r=>r.rank<=N)) T+=r.vol*(r.preg??1); if(A.offMeta.Tw&&!A.offFinal) T=A.offMeta.Tw; if(A.offMeta.total&&A.headTs-A.offMeta.ut<1800) T=Math.max(T*0.5,Math.min(T,A.offMeta.total)); base=A.pool.base/N; } else N=A.tiers[A.tiers.length-1][1];
+  if(A.offOnly){ rows.sort((x,y)=>((x.offRank>0?x.offRank:1e9)-(y.offRank>0?y.offRank:1e9))||y.vol-x.vol); rows.forEach((r,i)=>r.rank=r.offRank>0?r.offRank:Math.max(i+1,N+1)); }
+  const ui=A.tokens.findIndex(t=>t.s.toUpperCase()===(A.unit||"").toUpperCase()); const upx=A.rewInst?(PRICE.u[A.rewInst]||(ui>=0?tp[ui]:0)||0):1; A.upx=upx;
+  for(const r of rows){ r.addr=A.addrs[r.a]; if(A.offOnly){ const st=solStat(A,r.addr); if(st){ r.n=st.n; r.buy=st.buy; r.sell=st.sell; r.inv=new Float64Array([st.net]); r.chainVol=st.buy+st.sell; r.fee=0; r.solGas=st.gas; r.solNote=st.partial&&st.since?`链上明细仅含 ${new Date(st.since*1000).toLocaleString("zh-CN",{hour12:false,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})} 之后（公共节点只保留约 30 小时）`:""; } } const p=prev.get(r.a); const nz=A.offOnly||A.final||A.done; r.dVol=nz?0:r.vol-(p?p.vol:0); r.dRank=nz?0:(p&&p.rank!=null&&r.rank!=null?p.rank-r.rank:null);
+    let hold=0; for(let i=0;i<tp.length;i++) hold+=r.inv[i]*tp[i];
+    r.fee=r.fee||0; r.slip=0; r.holdQ=0; r.hold=0; r.holdCost=0; r.oldSell=0;
+    if(r.n&&r.bq){ for(let i=0;i<r.bq.length;i++){ const B=r.bq[i],S2=r.sq[i]; const pb=B?r.bu[i]/B:0, ps=S2?r.su[i]/S2:0, m=Math.min(B,S2);
+        r.slip+=m*(pb-ps);                                   // 交易磨损：同数量一买一卖的价差（不含手续费）
+        if(B>S2){ const q=B-S2; r.holdQ+=q; r.holdCost+=q*pb; r.hold+=q*(tp[i]||0); } // 未卖出的部分 → 持仓，不算磨损
+        else if(S2>B){ r.oldSell+=(S2-B)*ps; } } }           // 卖出活动前已有的代币，不计入磨损
+    else if(r.n){ r.slip=r.buy-r.sell-r.fee; }
+    r.holdPnl=r.hold-r.holdCost; r.wear=r.buy-r.sell; r.pnl=r.holdPnl-r.slip-r.fee;
+    const ok=r.vol>=A.minVol&&r.rank<=N&&!r.unlikely; r.tier=ok?tierOf(A,r.rank):-1;
+    if(A.reward==="xlaunch"){ r.rewTok=ok?base+r.vol/T*A.pool.bonus:0; if(r.offEst!=null&&r.offEst>0&&(A.offFinal||A.headTs-r.offUt<1800)) r.rewTok=r.offEst; if(A.offFinal&&!(r.offRank>0)) r.rewTok=0; r.rew=A.rewTok?r.rewTok*(tp[0]||0):r.rewTok; } else { r.rewTok=ok?A.tiers[r.tier][2]:0; r.rew=r.rewTok*upx; }
+    { const ex=A.offOnly?(r.solGas||0):gasOf(A,r.addr); const gm=(A.snap&&A.snap.gasMed)||GAS_DEF[A.native]||0;
+      if(ex!=null&&(ex>0||favSet().has(r.addr))){ r.gas=ex; r.gasEst=false; } else { r.gas=r.n*gm*(PRICE[A.native]||0); r.gasEst=true; } r.gas=(r.gas||0)+(r.gt||0); }   // 代付 Gas 费（从代币里扣）计入链 Gas
+    r.wearAll=r.slip+r.fee+(r.gas||0); r.wearBps=r.chainVol?(r.wearAll/r.chainVol*1e4):0; r.net=r.rew-r.wearAll+r.holdPnl; let mt=0; for(let i=1;i<r.tv.length;i++) if(r.tv[i]>r.tv[mt]) mt=i; r.main=A.tokens[mt].s; const tvs=r.tv.reduce((t,x)=>t+x,0); r.mainPct=tvs?r.tv[mt]/tvs:0;
+    r.mix=tvs?[...r.tv].map((x,i)=>[A.tokens[i].s,x]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(([k,x])=>`${k} ${Math.round(x/tvs*100)}%`).join(" · "):""; }
+  return {rows,N,T,base,tp,elig:elig.length};
+}
+
+/* ================= 渲染 ================= */
+const bandLabel=(A,i)=>{const [a,b,v]=A.bands[i]; const nm=a===b?`第 ${a} 名`:`第 ${a}–${b} 名`; return A.reward==="tiers"?`${nm} · ${v} ${A.unit||"USDT"} / 人`:nm;};
+function tabs(){ if(!Object.keys(ACTS).length){ $("tabs").innerHTML=`<button class="tab" id="mgrBtn2">＋ 添加活动</button>`; $("mgrBtn2").onclick=openMgr; return; } $("tabs").innerHTML=Object.values(ACTS).sort((x,y)=>((x.headTs||0)>x.endTs)-((y.headTs||0)>y.endTs)||y.startTs-x.startTs).map(A=>{const e=(A.headTs||0)>A.endTs; return `<button class="tab ${A.key===cur?'on':''}" data-k="${A.key}">${A.short}<span class="pill ${e?'end':''}">${e?'已结束':'进行中'}</span></button>`}).join("");
+  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{cur=b.dataset.k;LS.set("okxAct",cur);page=0;render();poll(ACTS[cur],true);}); }
+const cdCells=s=>[[Math.floor(s/86400),"天"],[Math.floor(s%86400/3600),"时"],[Math.floor(s%3600/60),"分"],[s%60,"秒"]].filter((x,i)=>i>0||x[0]>0).map(([v,l])=>`<div><b>${String(v).padStart(i2(l),"0")}</b><span>${l}</span></div>`).join("");
+const i2=l=>l==="天"?1:2;
+function countdown(A){ const now=Math.floor(Date.now()/1000); let s=A.endTs-now;
+  let daily="";
+  if(A.daily){ const ps=A.daily.periods, k=ps.findIndex(([a,b])=>now>=a&&now<b);
+    if(k>=0){ const left=ps[k][1]-now, pct=Math.min(100,(now-ps[k][0])/(ps[k][1]-ps[k][0])*100);
+      daily=`<div class="dcd"><div class="dcd-h"><b>第 ${k+1} 期日榜</b> <span class="muted">${k+1}/${ps.length} · ${new Date(ps[k][1]*1000).toLocaleString("zh-CN",{hour12:false,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})} 结算</span></div>
+        <div class="cd">${cdCells(left)}</div><div class="dbar"><i style="width:${pct.toFixed(1)}%"></i></div>${k+1<ps.length?`<div class="dim" style="font-size:11.5px;margin-top:4px">下一期 ${new Date(ps[k+1][0]*1000).toLocaleTimeString("zh-CN",{hour12:false,hour:"2-digit",minute:"2-digit"})} 开始，交易量重新计算</div>`:`<div class="dim" style="font-size:11.5px;margin-top:4px">最后一期日榜</div>`}</div>`; }
+    else if(now<ps[0][0]) daily=`<div class="dim" style="font-size:12px">第 1 期日榜 ${new Date(ps[0][0]*1000).toLocaleString("zh-CN",{hour12:false})} 开始</div>`; }
+  if(s<=0) return daily+`<div class="chips"><span class="chip" style="color:var(--down)">活动已${A.poolId?"截止报名":"结束"} · 数据截至结束区块</span></div>`;
+  return daily+(A.daily?`<div class="dim" style="font-size:11.5px;margin-top:8px">总榜结束倒计时</div>`:"")+`<div class="cd">${cdCells(s)}</div>`; }
+let C={};
+function render(){
+  const A=ACTS[cur]; if(!A) return; C=compute(A); const {rows,N,base,tp,elig}=C; lastRows[cur]=rows; tabs();
+  // 另一个活动也算一下，供收藏汇总
+  if(favs.length&&Date.now()-(window.__otherAt||0)>120000){ window.__otherAt=Date.now(); for(const k in ACTS) if(k!==cur){ try{ lastRows[k]=compute(ACTS[k]).rows; }catch(e){} } }   // 其他活动只给收藏汇总用，2 分钟算一次
+  const dt=t=>new Date(t*1000).toLocaleString("zh-CN",{hour12:false,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  $("actCard").innerHTML=`<div class="sub">${A.chain} · OKX Boost${SRV.status[A.key]?` · <span class="${/出错/.test(SRV.status[A.key])?"down":"up"}">服务器：${SRV.status[A.key]}</span>`:A.offOnly?" · 官方数据模式":""}</div><h2>${A.name}</h2><div class="sub">${A.desc}</div>
+    <div class="chips"><span class="chip">开始 <b>${dt(A.startTs)}</b></span><span class="chip">${A.endLbl} <b>${dt(A.endTs)}</b></span><a class="chip" target="_blank" href="${A.link}">活动页 ↗</a></div>
+    <div class="chips">${A.tokens.map((t,i)=>`<span class="chip">${t.s} <b>${tp[i]?"$"+(tp[i]<1?tp[i].toFixed(5):tp[i].toFixed(2)):"–"}</b></span>`).join("")}</div><div id="cdBox">${countdown(A)}</div>`;
+  const total=rows.reduce((s,r)=>s+r.vol,0), dTot=rows.reduce((s,r)=>s+Math.max(0,r.dVol),0), wear=rows.reduce((s,r)=>s+r.wearAll,0), feeT=rows.reduce((s,r)=>s+r.fee,0), gasT=rows.reduce((s,r)=>s+(r.gas||0),0), cv=rows.reduce((s,r)=>s+r.chainVol,0);
+  const wl=WINS.find(w=>w[1]===win)[0]; const k=[];
+  k.push(["上榜地址",rows.length.toLocaleString(),A.minVol?`≥$${A.minVol} 共 ${elig}`:`官方报名 ${(A.offMeta.participants||0).toLocaleString()} 人`]);
+  k.push(["累计交易量",fmt(total),`<span class="up">${wl} +${fmt(dTot)}</span>${A.offMeta.total?` · 官方 ${fmt(A.offMeta.total)}`:""}`]);
+  if(A.reward==="xlaunch"){ k.push(["获奖人数",N.toLocaleString()+(N<A.pool.max?` / ${A.pool.max.toLocaleString()}`:""),A.offMeta.claims?`官方领奖记录 ${A.offMeta.claims.toLocaleString()} 个 · 名次为官方精确值`:N<A.pool.max?`名额未满：报名并有交易量即可获奖`:A.offMeta.N?`按官方预计奖励反推 ≈ ${A.offMeta.N}`:"有量地址数"]); k.push(["均分奖励 / 人",A.rewTok?`${Math.round(base).toLocaleString()} ${A.pool.unit}`:f$(base),A.rewTok?`≈ ${f$(base*(tp[0]||0))} · ${A.pool.base.toLocaleString()} ÷ 获奖人数`:`${A.pool.base.toLocaleString()} ÷ 获奖人数`]);
+    k.push(["第 100 名",atRank(rows,100)?fmt(atRank(rows,100).vol):"–",A.offMeta.r100?`官方第 100 名 ${fmt(A.offMeta.r100)}`:""]); }
+  else if(A.offOnly){ const LN=A.tiers[A.tiers.length-1][1], r100=rows.find(x=>x.rank===100), r10=rows.find(x=>x.rank===10), r1=rows.find(x=>x.rank===1);
+    k.push([`${A.daily?(curBoard(A)==="total"?"总榜":"日榜")+" ":""}第 ${LN} 名门槛`,"官方未公开","只公开前 100 名；收藏地址可查精确名次"]); k.push(["第 100 名",r100?fmt(r100.vol):"–",`第 10 名 ${r10?fmt(r10.vol):"–"}`]);
+    k.push(["第 1 名",r1?fmt(r1.vol):"–",A.rewInst?`${A.unit} 价格 ${PRICE.u[A.rewInst]?"$"+PRICE.u[A.rewInst].toFixed(3):"–"}`:""]); }
+  else { const LN=A.tiers[A.tiers.length-1][1]; k.push([`第 ${LN} 名门槛`,rows[LN-1]?fmt(rows[LN-1].vol):"$"+A.minVol,rows[LN-1]?"进入奖励区最低交易量":`未满 ${LN} 名，≥$${A.minVol} 即获奖`]);
+    k.push(["第 100 名",rows[99]?fmt(rows[99].vol):"–",`第 10 名 ${rows[9]?fmt(rows[9].vol):"–"}`]); k.push(["第 500 名",rows[499]?fmt(rows[499].vol):"–",`第 700 名 ${rows[699]?fmt(rows[699].vol):"–"}`]); }
+  if(A.offOnly) k.push(["数据来源","OKX 官方",`${A.chain} 链暂不支持链上统计 · 官方数据 ${A.offMeta.ut?new Date(A.offMeta.ut*1000).toLocaleTimeString("zh-CN",{hour12:false}):"–"}`]);
+  else k.push(["全场总磨损",fmt(wear),`交易 ${fmt(wear-feeT-gasT)} · 平台费 ${fmt(feeT)} · Gas ≈${fmt(gasT)} · ${(wear/cv*1e4||0).toFixed(1)} bps`]);
+  $("kpis").innerHTML=k.map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  renderFavs(A,rows); renderTable(A,rows,N); renderSide(A,rows); renderNote(A);
+}
+function tc(A,t){ return t<0?"#394356":PAL[Math.min(t,PAL.length-1)]; }
+function slipTxt(r){ return r.slip<-0.005?`<span class="up" title="低买高卖的价差收益（买入后价格上涨再卖出）">+${f$(-r.slip)}</span>`:`<span class="down">${f$(Math.max(0,r.slip))}</span>`; }
+function rkTxt(r,h=""){ return r.rank==null?"—":h+r.rank; }
+const quotaOpen=(A,k)=>A.reward==="xlaunch"&&A.offMeta.N&&A.offMeta.N<A.pool.max&&k>A.offMeta.N;
+const thrV=(A,r)=>r?(r.rankEst&&A.reward==="xlaunch"?r.vol*1.01:r.vol):0;   // 估算名次的门槛加 1% 余量（宁高勿低）
+const atRank=(rows,k)=>{ let best=null; for(const r of rows){ if(r.rank!=null&&r.rank<=k&&(!best||r.rank>best.rank)) best=r; } return best; };
+function tokTag(A,r){ if(!r.n||!r.chainVol) return ""; return `<span class="tok" title="${esc(r.mix)}">${esc(r.main)}${r.mainPct<0.995&&A.tokens.length>1?`<i>${Math.round(r.mainPct*100)}%</i>`:""}</span>`; }
+/* ================= 疑似关联地址 ================= */
+async function loadClusters(A){ // 直接读服务器保存的分析结果和状态，秒开
+  try{ const j=await getJ(`api/clusters/${A.key}`); if(j.data) setClusters(A,j.data); A.clSt=j.state; A.clNow=j.now; A.clFetched=Date.now(); if(cur===A.key&&VIEW==="cl") render(); }catch(e){} }
+const agoTxt=t=>{ if(!t) return "–"; const s=Math.max(0,Date.now()/1000-t); return s<60?"刚刚":s<3600?Math.round(s/60)+" 分钟前":Math.round(s/3600)+" 小时前"; };
+function clStatusTxt(A){ const C=A.cl, st=A.clSt||{}; const parts=[];
+  if(C) parts.push(`结果保存于 ${new Date(C.ut*1000).toLocaleTimeString("zh-CN",{hour12:false})}（${agoTxt(C.ut)}）`);
+  if(C&&C.linksTs) parts.push(`链上数据截至 ${new Date(C.linksTs*1000).toLocaleTimeString("zh-CN",{hour12:false})}`);
+  if(st.running) parts.push(`<span class="warn">后台分析中 ${st.pct||0}%${st.msg?" · "+esc(st.msg):""}</span>`);
+  else if(st.nextRun) parts.push(`下次分析约 ${new Date(st.nextRun*1000).toLocaleTimeString("zh-CN",{hour12:false})}`);
+  return parts.join(" · "); }
+function setClusters(A,C){ A.cl=C; A.clOf=new Map(); for(const g of C.groups||[]) for(const a of g.m){ const l=A.clOf.get(a)||[]; l.push(g); A.clOf.set(a,l); } }
+function clTag(A,r){ const gs=A.clOf&&A.clOf.get(r.addr); if(!gs) return ""; return gs.map(g=>`<span class="cltag ${g.kind==="behavior"?"b":""}" data-cl="${g.id}" title="${g.kind==="fund"?"链上资金关联":"操作手法相同"}，共 ${g.size} 个地址">${esc(clName(A,g)||("关联#"+g.id))}·${g.size}</span>`).join(""); }
+function clLevel(g){ if(g.lv) return {h:["h","高度可疑"],m:["m","中度可疑"],l:["l",g.kind==="behavior"?"手法相似":"低度可疑"]}[g.lv]; const s=g.ev.reduce((t,e)=>t+(e.t.includes("互相转账")?3:e.t.includes("同一资金来源")?2:e.t.includes("归集")?2:1)*Math.min(e.n||1,10),0);
+  return g.kind==="behavior"?["l","手法相似"]:s>=12?["h","高度可疑"]:s>=5?["m","中度可疑"]:["l","低度可疑"]; }
+let clFocus=null, clSort=LS.get("okxClSort","lv"), clOpen=new Set(), IS_ADMIN=false;
+fetch(BASE+"api/whoami").then(r=>r.json()).then(j=>{IS_ADMIN=!!j.admin;}).catch(()=>{});
+const clName=(A,g)=>(LS.get("okxClName_"+A.key,{})[g.id])||g.name||"";
+async function renameCl(A,g){ const n=prompt(IS_ADMIN?"关联组名称（管理员修改，所有用户可见；留空清除）":"关联组名称（只保存在你的浏览器；留空清除）",clName(A,g)); if(n==null) return;
+  if(IS_ADMIN){ const r=await fetch(BASE+"api/admin/clname",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:A.key,id:g.id,name:n})}).then(r=>r.json()); if(!r.ok){ alert(r.msg||"保存失败"); return; } g.name=n||null; await loadClusters(A); }
+  else { const m=LS.get("okxClName_"+A.key,{}); if(n.trim()) m[g.id]=n.trim().slice(0,30); else delete m[g.id]; LS.set("okxClName_"+A.key,m); }
+  render(); }
+function evTxt(A,e){ const a=x=>`<a class="addr" target="_blank" href="${A.explorer}/address/${x}">${short(x)}</a>`;
+  if(e.t==="同一资金来源") return `同一资金来源 ${a(e.a)} → <b>${e.n}</b> 个地址${e.usd?` · ${fmt(e.usd)}`:""}`;
+  if(e.t==="资金归集到同一地址") return `资金归集到 ${a(e.a)} ← <b>${e.n}</b> 个地址${e.usd?` · ${fmt(e.usd)}`:""}`;
+  if(e.t.includes("同步交易")) return `15 秒内同步交易：<b>${e.n}</b> 对地址反复同时成交（最多 ${e.m} 次）`;
+  if(e.t==="地址之间互相转账") return `地址之间互相转账 <b>${e.n}</b> 次${e.usd?` · ${fmt(e.usd)}`:""}`;
+  if(e.t==="操作手法相同") return `操作手法相同：主交易 <b>${esc(e.tok)}</b> · 平均单笔 <b>${f$(e.avg)}</b> · 约 <b>${e.n}</b> 笔/地址 · ${new Date(e.start*1000).toLocaleString("zh-CN",{hour12:false,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})} 前后 30 分钟内开始`;
+  return esc(e.t); }
+function renderClusters(A,rows){
+  const box=$("clview"), C=A.cl; $("clN").textContent=C&&C.groups?C.groups.length:"";
+  if(!C){ const st=A.clSt||{}; box.innerHTML=`<div class="empty">${st.running?`服务器正在做第一次关联分析（${st.pct||0}%），每分析完一段就会显示结果，本页每分钟自动刷新。`:"还没有关联分析结果，服务器会自动开始分析。"}</div>`; return; }
+  const byA=new Map(rows.map(r=>[r.addr,r])), fm=favSet();
+  const gs=(C.groups||[]).map(g=>{ const ms=g.m.map(a=>byA.get(a)).filter(Boolean); return {...g,rows:ms,rew:ms.reduce((t,r)=>t+(r.rew||0),0),win:ms.filter(r=>r.rew>0).length,vol2:ms.reduce((t,r)=>t+r.vol,0),lv:clLevel(g)}; });
+  const LVN={h:0,m:1,l:2}; const key={lv:g=>LVN[g.lv[0]]*1e9-g.rew,reward:g=>-g.rew,size:g=>-g.size,vol:g=>-g.vol2}[clSort]||(g=>-g.rew); gs.sort((a,b)=>key(a)-key(b));
+  const tot=gs.reduce((t,g)=>t+g.rew,0), addrN=new Set(gs.flatMap(g=>g.m)).size;
+  box.innerHTML=`<div class="clbar"><span>共 <b>${gs.length}</b> 组 · 涉及 <b>${addrN}</b> 个地址 · 估算奖励合计 <b class="up">${f$(tot)}</b> · 分析前 ${C.top} 名地址</span><span class="dim" style="font-size:12px">${clStatusTxt(A)}</span>
+    <span style="margin-left:auto">排序</span><div class="seg" id="clSortSeg">${[["lv","可疑度"],["reward","奖励"],["size","地址数"],["vol","交易量"]].map(([k,l])=>`<button class="${clSort===k?"on":""}" data-s="${k}">${l}</button>`).join("")}</div></div>`+
+  gs.map(g=>{ const open=clOpen.has(g.id)||clFocus===g.id;
+    return `<div class="clg ${clFocus===g.id?"focus":""}" id="clg${g.id}"><div class="clh" data-g="${g.id}"><span class="lv ${g.lv[0]}">${g.lv[1]}</span><b>关联 #${g.id}</b>${clName(A,g)?`<span class="clnm">${esc(clName(A,g))}</span>`:""}<button class="cled" data-ren="${g.id}" title="自定义名称">✎</button><span class="muted">${g.size} 个地址 · ${g.kind==="fund"?"链上资金关联":"操作手法相同"}</span>
+      <div class="st"><span>交易量 <b>${fmt(g.vol2)}</b></span><span>获奖 <b>${g.win}</b>/${g.size}</span><span>估算奖励 <b class="up">${f$(g.rew)}</b></span>${g.unreg?`<span>未报名 <b>${g.unreg}</b></span>`:""}<span class="dim">${open?"收起 ▲":"展开 ▼"}</span></div></div>
+      <div class="clev">${g.ev.map(e=>`<span>${evTxt(A,e)}</span>`).join("")}</div>
+      <div class="clm ${open?"":"hide"}"><div class="tw"><table><thead><tr><th class="l">#</th><th class="l">地址</th><th>交易量</th><th>总磨损</th><th>估算奖励</th></tr></thead><tbody>${g.m.map(a=>{ const r=byA.get(a);
+        return `<tr><td class="l">${r&&r.rank!=null?r.rank:"—"}</td><td class="l"><a class="addr" target="_blank" href="${A.explorer}/address/${a}">${short(a)}</a>${fm.has(a)?`<span class="lbl">${esc(fm.get(a))}</span>`:""}${r?tokTag(A,r)+stTag(r):'<span class="tag">未上榜</span>'}</td><td>${r?fmt(r.vol):"–"}</td><td class="down">${r&&r.n?f$(r.wearAll):"–"}</td><td class="up">${r&&r.rew?f$(r.rew):"–"}</td></tr>`; }).join("")}</tbody></table></div></div></div>`; }).join("")||`<div class="empty">没有发现疑似关联的地址组</div>`;
+  box.querySelectorAll(".cled").forEach(b=>b.onclick=e=>{ e.stopPropagation(); const g=gs.find(x=>x.id===+b.dataset.ren); if(g) renameCl(A,g); });
+  box.querySelectorAll(".clh").forEach(h=>h.onclick=()=>{ const id=+h.dataset.g; clOpen.has(id)?clOpen.delete(id):clOpen.add(id); if(clFocus===id) clFocus=null; renderClusters(A,rows); });
+  box.querySelectorAll("#clSortSeg button").forEach(b=>b.onclick=()=>{ clSort=b.dataset.s; LS.set("okxClSort",clSort); renderClusters(A,rows); });
+  if(clFocus){ const el=$("clg"+clFocus); if(el&&el.scrollIntoView) setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),30); }
+}
+let VIEW=LS.get("okxView","rank");
+let clTimer=null;
+function setView(v){ VIEW=v; LS.set("okxView",v); clearInterval(clTimer);
+  if(v==="cl"&&ACTS[cur]){ const A=ACTS[cur]; if(!A.clFetched||Date.now()-A.clFetched>30000) loadClusters(A); clTimer=setInterval(()=>ACTS[cur]&&loadClusters(ACTS[cur]),60000); } document.querySelectorAll("#viewSw button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); $("clview").classList.toggle("hide",v!=="cl"); $("rkview").classList.toggle("hide",v!=="rank"); render(); }
+document.querySelectorAll("#viewSw button").forEach(b=>{ b.onclick=()=>setView(b.dataset.v); b.classList.toggle("on",b.dataset.v===VIEW); }); $("clview").classList.toggle("hide",VIEW!=="cl"); $("rkview").classList.toggle("hide",VIEW!=="rank");
+document.addEventListener("click",e=>{ const t=e.target.closest&&e.target.closest(".cltag"); if(!t) return; e.stopPropagation(); clFocus=+t.dataset.cl; setView("cl"); });
+function stTag(r){ return r.unlikely?`<span class="tag red" title="按历史数据判断大概率未报名，不计入名次和奖励">大概率未报名 ${Math.round((r.preg??0)*100)}%</span>`:r.status==="new"?`<span class="tag yel" title="按历史数据估算的报名概率">报名概率 ${Math.min(99,Math.round((r.preg??0.5)*100))}%</span>`:r.status==="unreg"?'<span class="tag red">未报名</span>':r.claim?'<span class="tag grn">已领奖·官方</span>':r.offRank>0?`<span class="tag grn">官方 #${r.offRank}</span>`:r.status==="reg"?`<span class="tag grn" title="曾进入官方前 100，确认已报名">已报名</span>`:""; }
+function holdTxt(A,r){ if(!(r.holdQ>1e-9)) return ""; const sym=A.tokens.length===1?A.tokens[0].s:"";
+  return `${fTok(r.holdQ)} ${sym} · ${f$(r.hold)}<span class="${r.holdPnl>=0?'up':'down'}"> (${sgn(r.holdPnl)})</span>`; }
+function renderFavs(A,rows){
+  const fm=favSet(), byA=new Map(rows.map(r=>[r.addr,r]));
+  if(!favs.length){ $("favGrid").innerHTML=`<div class="empty" style="grid-column:1/-1">还没有收藏地址。点右上「管理收藏 / 批量添加」一次性加入你所有账号，或在排行榜里点 ☆ 收藏。</div>`; $("favSum").textContent=""; $("favOther").textContent=""; return; }
+  let sv=0,sr=0,sp=0,sn=0,sh=0,cnt=0,won=0; const cards=favs.map(f=>{ const r=byA.get(f.a);
+    if(!r){ const un=A.unreg.has(A.ai.get(f.a)); return `<div class="fc" data-a="${f.a}"><div class="h"><span class="nm">${esc(f.n||"未命名")}</span><span class="tbadge">${un?"未报名":"无成交"}</span></div><div class="ad">${short(f.a)}</div><div class="rk dim">–</div><div class="g"><span>交易量</span><span>$0</span></div></div>`; }
+    if(r.rew>0) won++; sv+=r.vol;sr+=r.rew;sp+=r.wearAll;sh=(sh||0)+r.hold;sn+=r.net;cnt++;
+    const t=r.tier, col=tc(A,t), nextT=nextTier(A,r,rows), hs=holdTxt(A,r);
+    return `<div class="fc" data-a="${f.a}" style="--tc:${col}">
+      <div class="h"><span class="nm">${esc(f.n||"未命名")}</span><span class="tbadge" style="--tc:${col}">${t>=0?bandLabel(A,t).split(" · ")[0]:"未进奖励"}</span></div>
+      <div class="ad">${short(f.a)} ${tokTag(A,r)}${clTag(A,r)}${stTag(r)}</div>
+      <div class="rkline"><div class="rk">${r.rank==null?"—":rkTxt(r,"#")}${r.dRank>0?`<span class="delta up">▲${r.dRank}</span>`:r.dRank<0?`<span class="delta down">▼${-r.dRank}</span>`:""}</div>
+        <div class="rv"><div class="up big">${f$(r.rew)}</div><div class="dim">${tokRew(A)?fTok(r.rewTok||0)+" "+rewUnit(A):"估算奖励"}${r.offEst?" · 官方":""}</div></div></div>
+      <div class="g"><span>交易量</span><span><b>${fmt(r.vol)}</b>${r.dVol>0?` <span class="up">+${fmt(r.dVol)}</span>`:""}</span>
+      <span>${r.slip<0?"价差盈利":"交易磨损"}</span><span>${slipTxt(r)}</span>
+      <span>平台手续费</span><span class="down">${f$(r.fee)}</span>
+      <span>链 Gas${r.gasEst?'<i class="dim">（估）</i>':''}</span><span class="down">${r.gas==null?'<span class="dim">计算中…</span>':f$(r.gas)}</span>
+      <span><b>总磨损</b></span><span class="down"><b>${f$(r.wearAll)}</b></span>
+      ${hs?`<span>当前持仓</span><span>${hs}</span>`:""}
+      <span><b>净收益</b></span><span class="${r.net>=0?'up':'down'}"><b>${sgn(r.net)}</b></span></div>
+      <div class="hint">${nextT}${r.solNote?`<br><span class="warn">${r.solNote}</span>`:""}</div></div>`; });
+  cards.push(`<div class="fc total"><div class="h"><span class="nm">合计 · ${favs.length} 个账号</span><span class="tbadge">${A.short}</span></div><div class="ad">有成交 ${cnt} 个 · 获奖 ${won} 个</div>
+    <div class="rk">${f$(sr)}</div><div class="g"><span>总交易量</span><span><b>${fmt(sv)}</b></span><span>总磨损</span><span class="down">${f$(sp)}</span>${Math.abs(sh)>=0.01?`<span>持仓价值</span><span>${f$(sh)}</span>`:""}<span>总净收益</span><span class="${sn>=0?'up':'down'}"><b>${sgn(sn)}</b></span></div></div>`);
+  $("favGrid").innerHTML=cards.join("");
+  document.querySelectorAll(".fc[data-a]").forEach(el=>el.onclick=e=>{ if(e.target.closest&&e.target.closest(".cltag")) return; jumpTo(el.dataset.a); });
+  $("favSum").textContent=`· 共 ${favs.length} 个`;
+  $("favOther").innerHTML=Object.keys(ACTS).filter(x=>x!==cur).map(k=>{ const or=lastRows[k]||[]; let o2=0,oc=0; for(const f of favs){const r=or.find(x=>x.addr===f.a); if(r&&r.rew>0){o2+=r.rew;oc++;}}
+    return `<span class="chip"><b>${ACTS[k].short}</b>：获奖 ${oc} 个 · <b class="up">${f$(o2)}</b></span>`; }).join(" ");
+}
+function nextTier(A,r,rows){
+  if(A.reward!=="tiers"){ if(r.rank==null) return "大概率未报名，不计名次"; if(r.rank===1) return "当前第一"; const up=atRank(rows,r.rank-1); return up?`距上一名 ${fmt(Math.max(0,up.vol-r.vol))}`:""; }
+  const t=r.tier; if(t===0) return "已是第一档";
+  if(A.offOnly){ const tgt=t<0?A.tiers[A.tiers.length-1]:A.tiers[t-1], tr=rows.find(x=>x.rank===tgt[1]);
+    return tr?`升到前 ${tgt[1]} 名（${tgt[2]} ${A.unit||"USDT"}）还差 ${fmt(tr.vol-r.vol+0.01)}`:`官方只公开前 100 名，档位门槛未知（当前官方 #${r.offRank||"–"}）`; }
+  const last=A.tiers[A.tiers.length-1], cut=rows[last[1]-1];           // 第 1000 名
+  if(t<0){ const need=Math.max(A.minVol,cut?cut.vol+0.01:A.minVol)-r.vol;
+    return `进入前 ${last[1]} 名（${last[2]} ${A.unit||"USDT"}）还差 ${fmt(Math.max(0,need))}${cut?` · 当前门槛 ${fmt(cut.vol)}`:` · 上榜线 $${A.minVol}`}`; }
+  const tgt=A.tiers[t-1], tr=rows[tgt[1]-1];
+  return tr?`升到${tgt[0]===tgt[1]?"第 "+tgt[0]+" 名":"前 "+tgt[1]+" 名"}（${tgt[2]} ${A.unit||"USDT"}）还差 ${fmt(tr.vol-r.vol+0.01)}`:""; }
+function jumpTo(addr){ const rows=lastRows[cur]||[]; const ix=rows.findIndex(x=>x.addr===addr); if(ix<0) return; $("q").value=""; $("onlyFav").checked=false; sortKey="vol";sortDir=-1;
+  page=Math.floor(ix/+$("ps").value); render();
+  setTimeout(()=>{ const el=[...document.querySelectorAll(`[data-a="${addr}"]`)].find(e=>e.offsetParent!==null&&!e.classList.contains("fc")); if(el){ el.scrollIntoView({behavior:"smooth",block:"center"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),2500);} },80); }
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const tokRew=A=>(A.reward==="xlaunch"&&A.rewTok)||(A.reward==="tiers"&&A.rewInst);
+const rewUnit=A=>A.reward==="xlaunch"?A.pool.unit:(A.unit||"USDT");
+const fTok=n=>n>=100?Math.round(n).toLocaleString("en-US"):n.toFixed(2);
+function showDetail(A,r){ const hs=holdTxt(A,r);
+  $("detBody").innerHTML=`<h3>${r.rank==null?"—":rkTxt(r,"#")} · <span class="addr">${short(r.addr)}</span> ${stTag(r)}</h3>
+  <div class="g" style="margin-top:10px"><span>交易量</span><span><b>${fmt(r.vol)}</b></span><span>笔数</span><span>${r.n}</span>
+  <span>${r.slip<0?"价差盈利":"交易磨损"}</span><span>${slipTxt(r)}</span><span>平台手续费</span><span>${f$(r.fee)}</span><span>链 Gas</span><span>${(r.gasEst?"≈":"")+f$(r.gas||0)}</span>
+  <span><b>总磨损</b></span><span class="down"><b>${f$(r.wearAll)}</b></span>${hs?`<span>当前持仓</span><span>${hs}</span>`:""}
+  <span>奖励</span><span class="up">${tokRew(A)?fTok(r.rewTok||0)+" "+rewUnit(A)+" ≈ ":""}${f$(r.rew)}</span><span><b>净收益</b></span><span class="${r.net>=0?'up':'down'}"><b>${sgn(r.net)}</b></span></div>
+  <div class="hint">${nextTier(A,r,lastRows[cur]||[])}</div>
+  <div style="display:flex;gap:8px;margin-top:14px"><a class="btn" target="_blank" href="${A.explorer}/address/${r.addr}">浏览器查看</a><button class="btn pri" onclick="toggleFav('${r.addr}');$('detMask').classList.remove('on')">${favSet().has(r.addr)?"取消收藏":"收藏"}</button></div>`;
+  $("detMask").classList.add("on"); }
+function renderBoard(A){ const el=$("board"); if(!A.daily){ el.innerHTML=""; return; } const cb=curBoard(A);
+  el.innerHTML=`<button class="${cb==="total"?"on":""}" data-b="total">总榜</button>`+boardList(A).map(x=>`<button class="${cb===String(x.ps)?"on":""}" data-b="${x.ps}" ${x.future?"disabled":""}>第 ${x.i} 期日榜${x.now?`<span class="now">● 剩 ${(t=>`${Math.floor(t/3600)}:${String(Math.floor(t%3600/60)).padStart(2,"0")}`)(x.pe-Math.floor(Date.now()/1000))}</span>`:""}</button>`).join("");
+  el.querySelectorAll("button[data-b]").forEach(b=>b.onclick=()=>{ LS.set("okxBoard_"+A.key,b.dataset.b); page=0; render(); }); }
+function renderTable(A,rows,N){ renderBoard(A); if(VIEW==="cl"){ renderClusters(A,rows); } else if(A.cl) $("clN").textContent=(A.cl.groups||[]).length;
+  const wl=WINS.find(w=>w[1]===win)[0], fm=favSet();
+  const cols=[["rank","#","l"],["addr","地址","l"],["vol","交易量"],["dVol",`Δ ${wl}`],["n","笔数"],["slip","交易磨损"],["fee","平台费"],["gas","Gas"],["wearAll","总磨损"],["hold","持仓"],...(tokRew(A)?[["rewTok",`奖励（${rewUnit(A)}）`],["rew","当前价值"]]:[["rew","估算奖励"]]),["net","净收益"]];
+  $("th").innerHTML="<tr>"+cols.map(([k,l,c])=>`<th class="${c||''}" data-k="${k}">${l}${sortKey===k?(sortDir<0?" ↓":" ↑"):""}</th>`).join("")+"</tr>";
+  document.querySelectorAll("#th th").forEach(th=>th.onclick=()=>{const k=th.dataset.k; if(sortKey===k)sortDir*=-1; else{sortKey=k;sortDir=(k==="rank"||k==="addr")?1:-1;} page=0; render();});
+  const q=$("q").value.trim().toLowerCase(); let view=rows;
+  if($("onlyFav").checked) view=view.filter(r=>fm.has(r.addr));
+  if(q) view=view.filter(r=>r.addr.includes(q)||(fm.get(r.addr)||"").toLowerCase().includes(q));
+  const natural=(sortKey==="vol"&&sortDir<0)||(sortKey==="rank"&&sortDir>0);
+  if(!natural){ view=view.slice().sort((a,b)=>{const x=a[sortKey]??(sortKey==="rank"?1e18:-1e18),y=b[sortKey]??(sortKey==="rank"?1e18:-1e18); return sortDir*(x>y?1:x<y?-1:0);}); }
+  const ps=+$("ps").value, pages=Math.max(1,Math.ceil(view.length/ps)); page=Math.min(page,pages-1);
+  const showBands=$("bands").checked&&natural&&!q;
+  let html="", mh="", prevT=null; const slice=view.slice(page*ps,page*ps+ps);
+  slice.forEach((r,ix)=>{
+    const t=r.tier;
+    if(showBands&&t!==prevT){ const col=tc(A,t); const lbl=t>=0?bandLabel(A,t):"未进入奖励区"; const thr=t>=0&&quotaOpen(A,A.bands[t][1])?" · 名额未满，有交易量即获奖":atRank(rows,A.bands[t][1])?` · 该档最低 ${fmt(thrV(A,atRank(rows,A.bands[t][1])))}`:"";
+      html+=`<tr class="band" style="--tc:${col}"><td colspan="${tokRew(A)?13:12}"><div class="band-l"><b>${lbl}</b><span>${thr}</span><span class="ln"></span></div></td></tr>`; mh+=`<div class="mband" style="--tc:${col}"><b>${lbl}</b>${thr}</div>`; prevT=t; }
+    const col=tc(A,t), fav=fm.has(r.addr), g=r.rank<=3?` g${r.rank}`:"";
+    const dr=r.dRank==null?`<span class="delta up">新</span>`:r.dRank>0?`<span class="delta up">▲${r.dRank}</span>`:r.dRank<0?`<span class="delta down">▼${-r.dRank}</span>`:"";
+    const st=stTag(r);
+    html+=`<tr class="r ${fav?'fav':''} ${A.flash.has(r.a)?'flash':''}" data-a="${r.addr}" style="--tc:${col}">
+      <td class="l"><span class="rkb${g}">${rkTxt(r)}</span>${dr}</td>
+      <td class="l"><span class="star ${fav?'on':''}" data-f="${r.addr}">${fav?'★':'☆'}</span><a class="addr" target="_blank" href="${A.explorer}/address/${r.addr}">${short(r.addr)}</a>${fav?`<span class="lbl">${esc(fm.get(r.addr)||"")}</span>`:""}${tokTag(A,r)}${clTag(A,r)}${st}${r.vol<A.minVol?'<span class="tag">未达 $'+A.minVol+'</span>':""}</td>
+      <td><b>${fmt(r.vol)}</b></td><td class="${r.dVol>0?'up':'dim'}">${r.dVol>0?"+"+fmt(r.dVol):"–"}</td><td class="dim">${r.n||"–"}</td>
+      <td>${r.n?slipTxt(r):"–"}</td><td class="dim">${r.n?f$(r.fee):"–"}</td><td class="dim">${r.n?(r.gasEst?"≈":"")+f$(r.gas||0):"–"}</td>
+      <td class="${r.wearAll>0?'down':'up'}"><b>${r.n?f$(r.wearAll):"–"}</b></td>
+      <td class="dim" title="${r.holdQ>0?fTok(r.holdQ)+' 枚 · 浮盈亏 '+sgn(r.holdPnl):''}">${r.holdQ>1e-9?f$(r.hold):"–"}</td>
+      ${tokRew(A)?`<td>${r.rewTok?fTok(r.rewTok)+" <span class=\"dim\">"+rewUnit(A)+"</span>":"–"}</td>`:""}<td class="up">${r.rew?f$(r.rew):"–"}</td><td class="${r.net>=0?'up':'down'}"><b>${r.rew||r.n?sgn(r.net):"–"}</b></td></tr>`;
+    mh+=`<div class="mr ${fav?'fav':''}" style="--tc:${col}" data-a="${r.addr}"><div class="m1"><span class="rkb${g}">${rkTxt(r)}</span>
+      <div class="m2"><div><span class="star ${fav?'on':''}" data-f="${r.addr}">${fav?'★':'☆'}</span><span class="addr">${short(r.addr)}</span>${tokTag(A,r)}${clTag(A,r)}${fav?`<span class="lbl">${esc(fm.get(r.addr)||"")}</span>`:""}</div><div class="dim">${fmt(r.vol)}${r.dVol>0?` <span class="up">+${fmt(r.dVol)}</span>`:""} · 磨损 ${r.n?f$(r.wearAll):"–"}</div></div>
+      <div class="m3"><div class="up">${r.rew?f$(r.rew):"–"}</div><div class="${r.net>=0?'up':'down'}">${r.rew||r.n?sgn(r.net):""}</div></div></div></div>`; });
+  $("tbody").innerHTML=html||`<tr><td colspan="13" class="empty">没有匹配的地址</td></tr>`; $("mlist").innerHTML=mh||`<div class="empty">没有匹配的地址</div>`;
+  document.querySelectorAll(".mr").forEach(el=>el.onclick=e=>{ if(e.target.closest&&e.target.closest(".cltag")) return; const r=rows.find(x=>x.addr===el.dataset.a); if(r) showDetail(A,r); });
+  document.querySelectorAll(".star").forEach(s=>s.onclick=e=>{e.stopPropagation(); toggleFav(s.dataset.f);});
+  $("pgInfo").textContent=view.length?`第 ${page*ps+1}–${Math.min(view.length,(page+1)*ps)} / ${view.length.toLocaleString()}`:"";
+  const nums=[...new Set([0,pages-1,page-2,page-1,page,page+1,page+2].filter(x=>x>=0&&x<pages))].sort((a,b)=>a-b); let last=-1,h="";
+  nums.forEach(p=>{ if(p-last>1) h+=`<button disabled>…</button>`; h+=`<button class="${p===page?'on':''}" data-p="${p}">${p+1}</button>`; last=p; });
+  $("pgGo").max=pages; $("pgGo").placeholder=`1-${pages}`; $("pgGo").onkeydown=e=>{ if(e.key==="Enter"){ const p=Math.min(pages,Math.max(1,+e.target.value||1))-1; page=p; e.target.value=""; render(); $("th").scrollIntoView({behavior:"smooth",block:"start"}); } }; $("pgGo").onchange=e=>{ if(!e.target.value) return; page=Math.min(pages,Math.max(1,+e.target.value))-1; e.target.value=""; render(); };
+  $("pgs").innerHTML=h; document.querySelectorAll("#pgs button[data-p]").forEach(b=>b.onclick=()=>{page=+b.dataset.p;render();$("th").scrollIntoView({behavior:"smooth",block:"start"});});
+  $("rankInfo").textContent=`· ${rows.length.toLocaleString()} 个地址`;
+  $("win").innerHTML=WINS.map(([l,s])=>`<button class="${s===win?'on':''}" data-s="${s}">${l}</button>`).join("");
+  document.querySelectorAll("#win button").forEach(b=>b.onclick=()=>{win=+b.dataset.s;LS.set("okxWin",win);render();});
+}
+function renderSide(A,rows){
+  if(A.reward==="tiers") $("tierCard").innerHTML=`<h3>奖励阶梯 <span class="muted" style="font-weight:400;font-size:12px">共 ${A.tiers.reduce((s,[a,b,v])=>s+(b-a+1)*v,0).toLocaleString()} ${A.unit||"USDT"}${A.rewInst&&A.upx?` ≈ ${fmt(A.tiers.reduce((s,[a,b,v])=>s+(b-a+1)*v,0)*A.upx)}`:""}</span></h3><div class="tiers">${A.tiers.map(([a,b,v],i)=>`<span class="sw2" style="background:${tc(A,i)}"></span><span>第 ${a===b?a:a+"–"+b} 名 <span class="dim">${!A.offOnly&&rows[b-1]?"≥ "+fmt(rows[b-1].vol):A.offOnly&&b<=100&&rows.find(x=>x.rank===b)?"≥ "+fmt(rows.find(x=>x.rank===b).vol):""}</span></span><b>${v} ${A.unit||"USDT"}</b>`).join("")}</div>`;
+  else $("tierCard").innerHTML=`<h3>奖励模型</h3><div class="kv"><span>均分池</span><b>${A.pool.base.toLocaleString()} ${A.pool.unit}</b></div><div class="kv"><span>交易量池</span><b>${A.pool.bonus.toLocaleString()} ${A.pool.unit}</b></div>
+    <div class="kv"><span>获奖人数</span><b>${C.N.toLocaleString()}</b></div><div class="kv"><span>均分 / 人</span><b>${A.rewTok?Math.round(C.base).toLocaleString()+" "+A.pool.unit+" ≈ "+f$(C.base*(C.tp[0]||0)):f$(C.base)}</b></div>
+    <div class="tiers" style="margin-top:8px">${A.bands.map(([a,b],i)=>`<span class="sw2" style="background:${tc(A,i)}"></span><span>第 ${a===b?a:a+"–"+b} 名</span><b>${quotaOpen(A,b)?'<span class="up">$0 · 名额未满</span>':atRank(rows,b)?"≥ "+fmt(thrV(A,atRank(rows,b))):"–"}</b>`).join("")}</div>`;
+  const om=A.offMeta, cnt={reg:0,new:0,unreg:A.unregN||0}; for(const r of rows) if(r.status!=="unreg") cnt[r.status]++;
+  $("offCard").innerHTML=`<h3>官方数据校准</h3>
+    <div class="kv"><span>连接方式</span><b>${{local:"服务器直连 OKX",custom:"自定义代理",direct:"直连",public:"公共代理（受限）",none:"不可用",null:"检测中"}[proxyMode]}</b></div>
+    <div class="kv"><span>官方数据时间</span><b>${om.ut?new Date(om.ut*1000).toLocaleTimeString("zh-CN",{hour12:false}):"–"}</b></div>
+    ${A.actId?`<div class="kv"><span>全量校准</span><b>${om.full?new Date(om.full*1000).toLocaleTimeString("zh-CN",{hour12:false}):heavyOK()?"等待官方更新":"需本地 / 自定义代理"}</b></div>`:`<div class="kv"><span>官方报名 / 总量</span><b>${(om.participants||0).toLocaleString()} · ${fmt(om.total||0)}</b></div>`}
+    <div class="kv"><span>已确认报名</span><b class="up">${cnt.reg}</b></div><div class="kv"><span>待确认</span><b class="warn">${cnt.new}</b></div><div class="kv"><span>未报名（已剔除）</span><b class="down">${cnt.unreg}</b></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+      <label class="sw"><input type="checkbox" id="optFresh" ${LS.get("optFresh",true)?"checked":""}><i></i>计入待确认地址</label>
+      <label class="sw"><input type="checkbox" id="optUnreg" ${LS.get("optUnreg",false)?"checked":""}><i></i>显示未报名地址</label></div>`;
+  $("optFresh").onchange=e=>{LS.set("optFresh",e.target.checked);render();}; $("optUnreg").onchange=e=>{LS.set("optUnreg",e.target.checked);render();};
+  $("feedN").textContent=`本次打开新增 ${A.live}`;
+  $("feed").innerHTML=A.feed.slice(0,12).map(o=>`<div class="it ${A.flash.has(o.a)?'new':''}"><span class="sb ${o.buy?'b-buy':'b-sell'}">${o.buy?'买':'卖'}</span>
+    <span><a class="addr" target="_blank" href="${A.explorer}/tx/${o.h}">${short(A.addrs[o.a])}</a> <span class="dim">${A.tokens[o.t].s}</span></span><b>${f$(qUsd(A,o))}</b></div>`).join("")||`<div class="empty">等待新成交…</div>`;
+}
+function renderNote(A){
+  $("note").innerHTML=`<b>数据来源：</b>链上成交来自 OKX DEX 聚合路由（${A.chain}：<code>${A.router}</code>）的 <code>OrderRecord</code> 事件，按下单地址（sender）归属；${A.native.toUpperCase()} 那一侧按 OKX 实时现货价折算（$${(PRICE[A.native]||0).toFixed(2)}）。
+  <br><b>官方校准：</b>${A.actId?"逐个地址调用官方排行接口，确认是否报名，并取官方交易量；官方未收录的地址按「未报名」剔除。显示的交易量 = 官方快照值 + 快照之后的链上增量。":"官方只公开前 100 名：这 100 个地址用官方交易量；链上交易量高于官方第 100 名却不在官方榜上的地址，判定为「未报名」并剔除；其余地址标为「待确认」。获奖人数用官方公布的预计奖励反推。"}
+  <br><b>阶梯：</b>排行榜按奖励档位分段，每行左侧色条对应档位，分隔行显示该档的最低交易量。<b>增量：</b>Δ 是所选窗口内的新增交易量，箭头是和窗口开始时相比的名次变化。
+  <br><b>磨损拆分：</b>总磨损 = 交易磨损 + 平台手续费 + 链 Gas。<b>交易磨损</b>：同一代币「一买一卖」配对部分的价差（买入均价 − 卖出均价）× 配对数量，不含手续费；<b>没卖出的部分</b>单独显示为「当前持仓」（数量、现价值、浮盈亏），不计入磨损；卖出活动前已有的代币也不计入。<b>平台手续费</b>：同一订单全部 OKX 手续费事件之和；<b>链 Gas</b>：收藏地址逐笔精确，其余按抽样中位数估算（≈）。净收益 = 奖励 − 总磨损 + 持仓浮盈亏。<br><b>名次：</b>交易赛逐个地址核对官方名次；X Launch 报名期间，官方前 100 名直接采用，其余地址按「报名概率」估算名次：概率由已结束活动的领奖结果训练（历史获奖者、来回刷量、交易量级三个特征），再用官方公布的总交易量整体校准，名次 = 排在前面地址的报名概率之和（显示 ≈#）。以上均为估算，一切以官方结算为准。`;
+}
+
+/* ================= 收藏 ================= */
+function saveFavs(){ LS.set("okxFavs",favs); trackFavs(); renderFavList(); render(); }
+function toggleFav(a){ const i=favs.findIndex(f=>f.a===a); if(i>=0) favs.splice(i,1); else { favs.push({a,n:`账号${favs.length+1}`}); m7Query(a).then(render); } saveFavs(); }
+function renderFavList(){ $("favList").innerHTML=favs.map((f,i)=>`<div class="fi"><div><div class="addr">${f.a.startsWith("acc:")?'<span class="dim">待解析地址</span>':short(f.a)}</div></div><input value="${esc(f.n||"")}" data-i="${i}" data-k="n" placeholder="备注"><button class="btn sm ghost" data-d="${i}" style="color:var(--down)">删除</button></div>`).join("")||`<div class="empty">暂无收藏</div>`;
+  document.querySelectorAll("#favList input").forEach(el=>el.onchange=()=>{ const f=favs[+el.dataset.i]; f.n=el.value.trim(); LS.set("okxFavs",favs);render();});
+  document.querySelectorAll("#favList button[data-d]").forEach(b=>b.onclick=()=>{favs.splice(+b.dataset.d,1);saveFavs();}); }
+$("favMgr").onclick=()=>{renderFavList();$("favMask").classList.add("on");}; $("favClose").onclick=()=>$("favMask").classList.remove("on");
+$("favAdd").onclick=()=>{ const lines=$("favInput").value.split(/\n/); let n=0; const added=[];
+  for(let ln of lines){ const u=ln.match(UUID); const acc=u?u[0].toUpperCase():null; if(u) ln=ln.replace(u[0]," ");
+    const m=ln.match(/0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}/); if(!m&&!acc) continue;
+    const a=m?(m[0].startsWith("0x")?m[0].toLowerCase():m[0]):"acc:"+acc; const ex=favs.find(f=>f.a===a||(acc&&f.acc===acc));
+    const name=(m?ln.replace(m[0],""):ln).replace(/^[\s,，;；:：|\t]+|[\s,，;；|\t]+$/g,"").trim()||`账号${favs.length+1}`;
+    if(ex){ if(acc) ex.acc=acc; continue; } favs.push({a,n:name,acc}); added.push(a); n++; }
+  $("favInput").value=""; saveFavs(); trackFavs(); setTimeout(gasScan,500); for(const a of added) m7Query(a).then(render); };
+$("favExport").onclick=()=>{ navigator.clipboard?.writeText(favs.map(f=>`${f.a}, ${f.n||""}`).join("\n")); $("favExport").textContent="已复制"; setTimeout(()=>$("favExport").textContent="复制全部",1500); };
+$("favClear").onclick=()=>{ if(confirm("确定清空全部收藏？")){favs=[];saveFavs();} };
+$("favRefresh").onclick=async()=>{ $("favRefresh").textContent="刷新中…"; await favOfficial(); $("favRefresh").textContent="刷新官方名次"; };
+document.querySelectorAll(".mask").forEach(m=>m.onclick=e=>{ if(e.target===m) m.classList.remove("on"); });
+/* ================= 其他事件 ================= */
+function exportCSV(){ const A=ACTS[cur], fm=favSet();
+  const L=[["排名","名次变化","官方名次","地址","备注","状态","档位","交易量USD","增量USD","笔数","买入USD","卖出USD","交易磨损USD","平台手续费USD","Gas_USD","Gas是否估算","总磨损USD","持仓市值USD","磨损率bps",...(tokRew(A)?["奖励数量("+rewUnit(A)+")"]:[]),"估算奖励USD(当前价值)","净收益USD","主要代币"].join(",")];
+  for(const r of lastRows[cur]) L.push([r.rank,r.dRank??"新",r.offRank??"",r.addr,(fm.get(r.addr)||"").replace(/,/g," "),{reg:"已报名",new:"待确认",unreg:"未报名"}[r.status],r.tier>=0?bandLabel(A,r.tier).replace(/,/g," "):"未进奖励",
+    r.vol.toFixed(2),r.dVol.toFixed(2),r.n,r.buy.toFixed(2),r.sell.toFixed(2),r.slip.toFixed(2),r.fee.toFixed(2),(r.gas||0).toFixed(4),r.gasEst?"估算":"精确",r.wearAll.toFixed(2),r.hold.toFixed(2),r.wearBps.toFixed(2),...(tokRew(A)?[(r.rewTok||0).toFixed(4)]:[]),r.rew.toFixed(2),r.net.toFixed(2),r.main].join(","));
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+L.join("\n")],{type:"text/csv"})); a.download=`${A.key}_okx_rank_${new Date().toISOString().slice(0,16).replace(/[:T]/g,"")}.csv`; a.click(); }
+let pollN=0;
+function schedule(){ clearInterval(timer); timer=setInterval(()=>{ if(document.hidden) return; pollN++; for(const k in ACTS){const A=ACTS[k]; if(A.endBlock!==null&&A.next>A.endBlock) continue; if(k===cur||pollN%8===0) poll(A,k===cur);} },+$("iv").value*1000); }   // 只实时刷新当前活动，页面在后台时暂停
+$("iv").onchange=schedule; $("csv").onclick=exportCSV;
+$("pause").onclick=()=>{paused=!paused;$("pause").textContent=paused?"继续":"暂停";setStat(true,"恢复中…");if(!paused)poll(ACTS[cur],true);};
+$("q").oninput=()=>{page=0;render();}; $("ps").onchange=()=>{page=0;render();}; $("onlyFav").onchange=()=>{page=0;render();}; $("bands").onchange=render;
+setInterval(()=>{ if(!document.hidden) render(); },20000);
+setInterval(()=>{ const b=document.getElementById("cdBox"); if(b) b.innerHTML=countdown(ACTS[cur]); },1000);
+setInterval(prices,60000); setInterval(priceHistory,1800000); setInterval(gasScan,60000); setInterval(officialTick,60000); setInterval(drainQueue,20000);
+/* ================= 版本与更新公告 ================= */
+const APP_VERSION="4.6";
+const CHANGELOG=[ // 每次发布新版本在最前面加一条
+ {v:"4.6",d:"2026-10-21",items:["日榜交易赛新增<b>本期日榜结束倒计时</b>和进度条，日榜切换按钮显示剩余时间","管理员可在后台修改历史版本更新记录"]},
+ {v:"4.5",d:"2026-10-21",items:["修复排行榜 / 疑似关联<b>切换无效</b>、关联组<b>展开收起无效</b>的问题，关联组默认全部收起","关联组可<b>自定义名称</b>（管理员修改所有人可见，普通用户保存在自己浏览器），组号在每次重新分析后保持不变","<b>关联算法升级</b>：新增「15 秒内同步交易」证据；互相转账需 ≥$20 或 ≥2 次；操作手法相同改为平均单笔差 ≤5%、开始时间差 ≤10 分钟，且不再把已有资金组串成大组；可按可疑度排序"]},
+ {v:"4.4",d:"2026-10-21",items:["<b>性能优化</b>：只实时刷新当前查看的活动，浏览器切到后台时暂停刷新，服务器负载大幅降低"]},
+ {v:"4.3",d:"2026-10-21",items:["疑似关联看板<b>秒开</b>：直接读取服务器保存的分析结果，并显示结果保存时间、链上数据截止时间和后台分析进度","服务器分段分析、每段完成立即保存，新上榜地址补扫支持断点续扫"]},
+ {v:"4.2",d:"2026-10-21",items:["新增<b>疑似关联地址</b>看板：根据链上资金往来（同一资金来源、资金归集到同一地址、地址之间互相转账）和操作手法（同币种、同单笔金额、同时段开始）把疑似同一人操作的钱包分组，按奖励 / 地址数 / 交易量排行","排行榜中关联地址显示紫色「关联#组号」标签，点击直接查看该组"]},
+ {v:"4.1",d:"2026-10-20",items:["新增<b>更新公告</b>：版本更新和管理员公告会在打开页面时提醒，点右上角版本号可随时查看","排行榜显示每个地址<b>交易量最多的币</b>，多币种时附占比，鼠标悬停看完整明细"]},
+ {v:"4.0",d:"2026-10-20",items:["支持<b>日榜 + 总榜</b>交易赛（如科技先锋），排行榜上方可切换总榜 / 各期日榜","新增<b>管理后台</b>：访问统计、活动管理、在线更新程序、日志","补充统计 X Layer 上的<b>免 Gas 交易</b>，官方前 100 名交易量误差缩小到 0.5% 以内"]},
+ {v:"3.8",d:"2026-10-18",items:["补充统计 BNB Chain 上的<b>免 Gas 交易</b>（OKX 中继代发），修正第 8000 名门槛偏低的问题","代付 Gas 费计入「链 Gas」"]},
+ {v:"3.7",d:"2026-10-18",items:["获奖人数改用官方前 100 名回归计算，活动结束后不再误显示「名额未满」","估算门槛偏保守（宁高勿低）","点击「我的账号」卡片可跳转到排行榜对应位置","分页支持输入页码跳转"]},
+ {v:"3.5",d:"2026-10-18",items:["用「资金周转倍数」识别同一笔资金反复刷量的地址，报名概率更准","名额未满时门槛显示「$0 · 名额未满」"]},
+ {v:"3.2",d:"2026-10-18",items:["X Launch 报名期间按<b>报名概率</b>估算名次，第 100 名后名次误差中位数约 0.6%","活动开放领奖后，自动读取链上领奖记录得到官方精确名次"]},
+ {v:"3.0",d:"2026-10-17",items:["界面改版，<b>适配手机</b>","磨损拆分为交易磨损、平台手续费、链 Gas，未卖出的代币显示为当前持仓"]},
+];
+const verCmp=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ const d=(x[i]||0)-(y[i]||0); if(d) return d; } return 0; };
+let NOTICES=[]; const CL_BUILTIN=CHANGELOG.slice();
+function applyChangelog(o){ if(!o) return; const del=new Set(o.deleted||[]), m=new Map(CL_BUILTIN.map(c=>[c.v,c]));
+  for(const c of o.items||[]) m.set(c.v,{v:c.v,d:c.d,items:c.items.map(x=>esc(x)),edited:true});
+  const arr=[...m.values()].filter(c=>!del.has(c.v)).sort((a,b)=>verCmp(b.v,a.v)); CHANGELOG.length=0; CHANGELOG.push(...arr); }
+async function loadNews(auto){
+  try{ const j=await getJ("api/notices"); NOTICES=j.notices||[]; applyChangelog(j.changelog); if(j.page&&verCmp(j.page,APP_VERSION)>0){ NOTICES.unshift({id:"reload"+j.page,ts:Date.now()/1000,title:`新版本 v${j.page} 已发布`,body:"请刷新页面加载新版本。",pin:true}); } }catch(e){}
+  if(LS.get("okxSeenVer",null)==null&&localStorage.getItem("okxAct")) LS.set("okxSeenVer","4.0");   // 老用户：从 4.0 之后的更新开始提醒
+  const seenV=LS.get("okxSeenVer",null), seenN=new Set(LS.get("okxSeenNotice",[]));
+  const newV=CHANGELOG.filter(c=>!seenV||verCmp(c.v,seenV)>0), newN=NOTICES.filter(n=>!seenN.has(n.id));
+  $("verTxt").textContent="v"+APP_VERSION; $("verDot").classList.toggle("hide",!(newV.length||newN.length));
+  if(!seenV){ LS.set("okxSeenVer",APP_VERSION); }        // 第一次访问的新用户：不弹历史公告，只提醒未读的管理员公告
+  if(auto&&(seenV?(newV.length||newN.length):newN.length)) showNews(seenV?newV:[],newN);
+}
+function showNews(newV,newN){
+  const nv=new Set((newV||[]).map(c=>c.v)), nn=new Set((newN||[]).map(n=>n.id));
+  const items=[...NOTICES.map(n=>({k:"n",t:n.ts,html:`<div class="it"><div class="hd"><span class="kind n">公告</span><b>${esc(n.title)}</b>${nn.has(n.id)?'<span class="new">NEW</span>':""}<span class="dim" style="font-size:12px">${new Date(n.ts*1000).toLocaleDateString("zh-CN")}</span></div>${n.body?`<p>${esc(n.body)}</p>`:""}</div>`})),
+    ...CHANGELOG.map(c=>({k:"v",t:Date.parse(c.d)/1000,html:`<div class="it"><div class="hd"><span class="kind">版本更新</span><b>v${c.v}</b>${nv.has(c.v)?'<span class="new">NEW</span>':""}<span class="dim" style="font-size:12px">${c.d}</span></div><ul>${c.items.map(x=>`<li>${x}</li>`).join("")}</ul></div>`}))];
+  // 未读的排最前，其余按时间倒序
+  items.sort((a,b)=>b.t-a.t); const unread=items.filter(x=>x.html.includes('class="new"')), rest=items.filter(x=>!x.html.includes('class="new"'));
+  $("newsBody").innerHTML=[...unread,...rest].map(x=>x.html).join(""); $("newsVer").textContent=`当前版本 v${APP_VERSION}`; $("newsMask").classList.add("on"); }
+function markNewsRead(){ LS.set("okxSeenVer",(CHANGELOG[0]||{v:APP_VERSION}).v); LS.set("okxSeenNotice",[...new Set([...LS.get("okxSeenNotice",[]),...NOTICES.map(n=>n.id)])].slice(-200)); $("verDot").classList.add("hide"); }
+$("verBtn").onclick=()=>{ showNews([],[]); markNewsRead(); };
+$("newsClose").onclick=()=>{ $("newsMask").classList.remove("on"); markNewsRead(); };
+
+/* ================= 活动管理 / 启动 ================= */
+async function loadConfigSoft(){ try{ const j=await getJ("api/activities"); SRV.status=j.status||{}; for(const c of j.acts||[]) if(ACTS[c.key]) ACTS[c.key].endTs=c.endTs; }catch(e){} }
+function trackFavs(){ for(const A of Object.values(ACTS)) if(A.offOnly&&favs.length) fetch(BASE+"api/track",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:A.key,addrs:favs.map(f=>f.a)})}).catch(()=>{}); }
+async function post(u,b){ b.pass=$("mgrPass").value||LS.get("okxAdmin",""); const r=await fetch(BASE+u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(b)}); const j=await r.json(); if(j.ok&&$("mgrPass").value) LS.set("okxAdmin",$("mgrPass").value); return j; }
+function openMgr(){ $("mgrPassRow").style.display=SRV.admin?"flex":"none"; $("mgrPass").value=LS.get("okxAdmin","");
+  const now=Date.now()/1000;
+  $("mgrList").innerHTML=CFG.slice().sort((a,b)=>b.startTs-a.startTs).map(c=>`<div class="fi" style="grid-template-columns:1fr auto auto"><span><b>${esc(c.short||c.name)}</b> <span class="dim">${c.chain} · ${now>c.endTs?"已结束":"进行中"}${SRV.status[c.key]?" · "+SRV.status[c.key]:""}</span></span>
+    <label class="sw"><input type="checkbox" data-h="${c.key}" ${c.hidden?"":"checked"}><i></i>显示</label><button class="btn sm ghost" data-r="${c.key}" style="color:var(--down)">删除</button></div>`).join("")||`<div class="empty">还没有活动</div>`;
+  document.querySelectorAll("#mgrList input[data-h]").forEach(el=>el.onchange=async()=>{ const j=await post("api/hide",{key:el.dataset.h,hidden:!el.checked}); if(!j.ok){$("mgrMsg").innerHTML=`<span class="down">${j.msg}</span>`;return;} await reloadAll(); openMgr(); });
+  document.querySelectorAll("#mgrList button[data-r]").forEach(b=>b.onclick=async()=>{ if(!confirm("删除后需要重新添加并重新统计，确定？")) return; const j=await post("api/remove",{key:b.dataset.r}); if(!j.ok){$("mgrMsg").innerHTML=`<span class="down">${j.msg}</span>`;return;} await reloadAll(); openMgr(); });
+  $("mgrMask").classList.add("on");
+  $("mgrDiag").innerHTML=`<span class="dim">服务器网络检测中…</span>`; getJ("api/diag").then(d=>{ $("mgrDiag").innerHTML="<b>服务器网络</b>："+Object.entries(d).map(([k,v])=>`<span class="${/^OK/.test(v)?"up":"down"}">${esc(k)} ${esc(v)}</span>`).join(" · "); }).catch(()=>{$("mgrDiag").textContent="";}); }
+async function reloadAll(){ await loadConfig(); if(!ACTS[cur]) cur=pickCur(); render(); for(const k in ACTS) poll(ACTS[k],k===cur); }
+function pickCur(){ const v=Object.values(ACTS); const live=v.filter(A=>Date.now()/1000<A.endTs).sort((a,b)=>b.startTs-a.startTs); return (live[0]||v[0]||{}).key; }
+$("mgrBtn").onclick=openMgr; $("mgrClose").onclick=()=>$("mgrMask").classList.remove("on");
+$("mgrAdd").onclick=async()=>{ const u=$("mgrUrl").value.trim(); if(!u) return; $("mgrMsg").textContent="正在读取活动信息…（约 10–30 秒）"; $("mgrAdd").disabled=true;
+  try{ let j=await post("api/add",{url:u}).catch(e=>({ok:false,msg:"NEED_STATE:"+e.message}));
+    
+    if(!j.ok) throw new Error((j.msg||"").replace("NEED_STATE:","")); $("mgrMsg").innerHTML=`<span class="up">已添加，服务器开始统计。进行中的活动首次同步可能需要几分钟到几十分钟。</span>`; $("mgrUrl").value=""; await reloadAll(); cur=j.key; LS.set("okxAct",cur); render(); openMgr(); }
+  catch(e){ $("mgrMsg").innerHTML=`<span class="down">添加失败：${esc(e.message||e)}</span>`; } finally{ $("mgrAdd").disabled=false; } };
+function noServer(msg){ $("actCard").innerHTML=`<h2>无法连接服务端</h2><div class="sub">${msg}<br>请用 <code>python3 okx_boost_server.py</code> 启动后，通过 http://服务器地址:8787 打开本页。</div>`; }
+(async()=>{ bridgePing(); setTimeout(bridgePing,1500); showProxy(); setTimeout(()=>loadNews(true),1200); setInterval(()=>loadNews(false),300000);
+  try{ await loadConfig(); }catch(e){ noServer("读取 /api/activities 失败。"); return; }
+  cur=ACTS[cur]?cur:pickCur(); await loadPrior(); await prices(); await priceHistory();
+  if(!cur){ tabs(); $("actCard").innerHTML=`<h2>还没有显示中的活动</h2><div class="sub">点右上角「☰ 活动管理」粘贴 OKX 活动链接添加。</div>`; return; }
+  render(); trackFavs(); poll(ACTS[cur],true).then(()=>{ for(const k in ACTS) if(k!==cur) poll(ACTS[k],false); }); schedule(); officialTick(); setTimeout(gasScan,4000); setTimeout(solScan,3000); setInterval(solScan,90000);
+  setInterval(loadConfigSoft,60000); const ping=()=>fetch(BASE+"api/ping",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({act:cur})}).catch(()=>{}); ping(); setInterval(ping,60000);
+  setInterval(async()=>{ if(document.hidden) return; const A=ACTS[cur]; if(A&&!A.offOnly){ await loadData(A); render(); } },600000);   // 只重新拉取当前活动的完整数据
+  setInterval(async()=>{ for(const A of Object.values(ACTS)) if(A.offOnly){ try{ loadOff(A,await getJ(`data/${A.key}_off.json`)); }catch(e){} } render(); },120000);
+})();
+</script>
+</body>
+</html>

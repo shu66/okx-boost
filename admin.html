@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OKX Boost · 管理后台</title>
+<style>
+:root{--bg:#0b0d12;--p1:#12151c;--p2:#171b24;--p3:#1e2330;--line:#232837;--line2:#2e3446;--fg:#e9edf5;--sub:#9aa3b5;--dim:#626b7f;--acc:#b6f23d;--up:#22c55e;--down:#f43f5e;--warn:#f59e0b;--blue:#60a5fa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 Inter,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-variant-numeric:tabular-nums}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1280px;margin:0 auto;padding:0 18px 60px}
+.top{position:sticky;top:0;z-index:5;background:rgba(11,13,18,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin:0 -18px 16px;padding:10px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--acc);color:#0b0d12;display:grid;place-items:center;font-weight:900}
+h1{font-size:16px;margin:0 auto 0 0}
+.nav{display:flex;gap:6px;flex-wrap:wrap}.nav button{border:1px solid var(--line);background:var(--p1);color:var(--sub);padding:6px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:13px}
+.nav button.on{background:var(--fg);color:#0b0d12;border-color:var(--fg)}
+.btn{background:var(--p2);color:var(--fg);border:1px solid var(--line2);border-radius:9px;padding:6px 11px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--sub)}.btn.pri{background:var(--acc);color:#0b0d12;border-color:transparent;font-weight:700}.btn.sm{padding:3px 9px;font-size:12px;border-radius:7px}.btn.red{color:var(--down)}
+input,select{background:var(--p2);color:var(--fg);border:1px solid var(--line2);border-radius:9px;padding:7px 11px;font:inherit;font-size:13px;outline:none}input:focus{border-color:var(--acc)}
+.card{background:var(--p1);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.card h3{margin:0 0 12px;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.grid{display:grid;gap:12px}.k4{grid-template-columns:repeat(4,1fr)}.k2{grid-template-columns:1fr 1fr}
+.kpi{background:var(--p1);border:1px solid var(--line);border-radius:14px;padding:12px 14px}.kpi .l{color:var(--sub);font-size:12px}.kpi .v{font-size:22px;font-weight:750}.kpi .s{color:var(--dim);font-size:11.5px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--dim);font-weight:600;font-size:11.5px;text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}.tw{overflow-x:auto}
+.tag{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--p3);color:var(--sub);white-space:nowrap}.tag.g{color:var(--up);background:rgba(34,197,94,.12)}.tag.r{color:var(--down);background:rgba(244,63,94,.12)}.tag.y{color:var(--warn);background:rgba(245,158,11,.12)}
+.muted{color:var(--sub)}.dim{color:var(--dim)}.up{color:var(--up)}.down{color:var(--down)}
+.bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding-top:10px}.bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:var(--dim)}
+.bars i{display:block;width:100%;background:linear-gradient(180deg,var(--acc),rgba(182,242,61,.25));border-radius:5px 5px 0 0;min-height:2px}
+.logs{background:#07090c;border:1px solid var(--line);border-radius:10px;padding:10px;font:12px/1.6 ui-monospace,Menlo,monospace;color:#b9c2d3;max-height:520px;overflow:auto;white-space:pre-wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.ops{display:flex;gap:4px;flex-wrap:wrap}
+.login{max-width:360px;margin:15vh auto}.msg{font-size:13px;margin-top:8px}
+.drop{border:1px dashed var(--line2);border-radius:12px;padding:18px;text-align:center;color:var(--sub);cursor:pointer}.drop:hover{border-color:var(--acc)}
+.hide{display:none!important}
+@media(max-width:760px){.k4{grid-template-columns:1fr 1fr}.k2{grid-template-columns:1fr}.wrap{padding:0 10px 40px}.top{margin:0 -10px 12px;padding:8px 10px}.hide-m{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loginBox" class="card login hide">
+    <h3>OKX Boost 管理后台</h3>
+    <div class="row"><input id="pw" type="password" placeholder="管理密码（ADMIN_PASS）" style="flex:1"><button class="btn pri" id="loginBtn">登录</button></div>
+    <div class="msg muted" id="loginMsg"></div>
+  </div>
+
+  <div id="app" class="hide">
+    <div class="top"><div class="logo">B</div><h1>管理后台 <span class="dim" id="ver" style="font-weight:400;font-size:12px"></span></h1>
+      <div class="nav" id="nav">
+        <button data-t="dash" class="on">概览</button><button data-t="acts">活动</button><button data-t="news">公告</button><button data-t="sys">系统</button><button data-t="logs">日志</button>
+      </div>
+      <a class="btn" href="./" target="_blank">打开看板 ↗</a><button class="btn" id="logout">退出</button>
+    </div>
+
+    <!-- 概览 -->
+    <section data-p="dash">
+      <div class="grid k4" id="kpis"></div>
+      <div class="grid k2" style="margin-top:12px">
+        <div class="card"><h3>近 14 天访问 <span class="muted" style="font-size:12px;font-weight:400">柱高 = 访问次数，数字 = 独立访客</span></h3><div class="bars" id="bars"></div></div>
+        <div class="card"><h3>当前在线（5 分钟内）</h3><div id="online"></div></div>
+      </div>
+      <div class="card"><h3>最近访客 <span class="muted" style="font-size:12px;font-weight:400">IP 已脱敏</span></h3><div class="tw"><table><thead><tr><th>IP</th><th>设备</th><th>访问次数</th><th>首次访问</th><th>最近访问</th></tr></thead><tbody id="recent"></tbody></table></div></div>
+    </section>
+
+    <!-- 活动 -->
+    <section data-p="acts" class="hide">
+      <div class="card"><h3>添加活动</h3>
+        <div class="row"><input id="url" placeholder="粘贴 OKX Boost 活动链接：https://web3.okx.com/zh-hans/boost/..." style="flex:1;min-width:240px"><label class="muted" style="font-size:12.5px"><input type="checkbox" id="only" checked> 添加后只显示这个活动</label><button class="btn pri" id="addBtn">添加</button></div>
+        <div class="msg" id="addMsg"></div>
+      </div>
+      <div class="card"><h3>全部活动 <button class="btn sm" id="refresh">刷新</button></h3>
+        <div class="tw"><table><thead><tr><th>活动</th><th>状态</th><th>时间（北京）</th><th>链上数据</th><th>官方数据</th><th>操作</th></tr></thead><tbody id="acts"></tbody></table></div>
+        <div class="dim" style="font-size:12px;margin-top:10px">「重新扫描」会删除该活动的链上数据并从头统计；「刷新官方」立即重新拉取官方排名；「只显示」会隐藏其他所有活动。</div>
+      </div>
+    </section>
+
+    <!-- 公告 -->
+    <section data-p="news" class="hide">
+      <div class="card"><h3><span id="nFormT">发布公告</span> <span class="muted" style="font-size:12px;font-weight:400">用户下次打开看板时会弹窗提醒</span></h3>
+        <input id="nTitle" placeholder="标题，例如：科技先锋第 3 期日榜门槛上涨提醒" style="width:100%;margin-bottom:8px">
+        <textarea id="nBody" placeholder="内容（可选，支持换行）" style="width:100%;min-height:110px;background:var(--p2);color:var(--fg);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;font:inherit;font-size:13px"></textarea>
+        <div class="row" style="margin-top:8px"><label class="muted hide" id="nReRow" style="font-size:12.5px"><input type="checkbox" id="nRe"> 修改后重新提醒所有用户</label><button class="btn pri" id="nAdd">发布</button><button class="btn hide" id="nCancel">取消编辑</button><span class="msg" id="nMsg"></span></div>
+      </div>
+      <div class="card"><h3>管理员公告 <span class="muted" id="nCount" style="font-size:12px;font-weight:400"></span></h3><div id="nList"></div></div>
+      <div class="card"><h3>版本更新记录 <span class="muted" style="font-size:12px;font-weight:400">修改后用户刷新页面即生效；「恢复」可还原为页面文件内置的内容</span><button class="btn sm" id="vAdd">新增版本记录</button></h3>
+        <div id="vForm" class="hide" style="border:1px solid var(--line2);border-radius:10px;padding:12px;margin-bottom:10px">
+          <div class="row"><input id="vV" placeholder="版本号，如 4.6" style="width:120px"><input id="vD" type="date" style="width:160px"></div>
+          <textarea id="vItems" placeholder="每行一条更新内容" style="width:100%;min-height:110px;margin-top:8px;background:var(--p2);color:var(--fg);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;font:inherit;font-size:13px"></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn pri" id="vSave">保存</button><button class="btn" id="vCancel">取消</button><span class="msg" id="vMsg"></span></div></div>
+        <div id="vList"></div>
+        <div class="dim" style="font-size:12px;margin-top:10px">版本更新说明随看板页面文件自动发布：上传新版页面后，用户刷新即会看到该版本的更新内容；已打开页面的用户会收到「新版本已发布，请刷新」提醒。</div></div>
+    </section>
+
+    <!-- 系统 -->
+    <section data-p="sys" class="hide">
+      <div class="grid k2">
+        <div class="card"><h3>服务器网络</h3><div id="diag"></div></div>
+        <div class="card"><h3>运行状态</h3><div id="sysinfo"></div><div class="row" style="margin-top:12px"><button class="btn" id="restart">重启服务</button></div></div>
+      </div>
+      <div class="card"><h3>在线更新程序 <span class="muted" style="font-size:12px;font-weight:400">不用再登录服务器上传文件</span></h3>
+        <div class="drop" id="drop">点击选择或拖入文件：<b>okx-boost-live-rank.html</b>（看板页面）、<b>admin.html</b>（后台）、<b>okx_boost_server.py</b>（服务程序，上传后自动重启）<input type="file" id="file" multiple class="hide" accept=".html,.py"></div>
+        <div class="msg" id="upMsg"></div>
+        <div class="tw" style="margin-top:10px"><table><thead><tr><th>文件</th><th>大小</th><th>更新时间</th></tr></thead><tbody id="files"></tbody></table></div>
+        <div class="dim" style="font-size:12px;margin-top:8px">每次替换前会自动备份为 .bak；Python 文件会先检查语法，有错误不会替换。</div>
+      </div>
+    </section>
+
+    <!-- 日志 -->
+    <section data-p="logs" class="hide"><div class="card"><h3>最近日志 <button class="btn sm" id="refresh2">刷新</button></h3><div class="logs" id="logs"></div></div></section>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id), esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dt=t=>t?new Date(t*1000).toLocaleString("zh-CN",{hour12:false,timeZone:"Asia/Shanghai",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}):"–";
+const ago=t=>{ if(!t) return "–"; const s=Date.now()/1000-t; return s<60?Math.round(s)+" 秒前":s<3600?Math.round(s/60)+" 分钟前":s<86400?Math.round(s/3600)+" 小时前":Math.round(s/86400)+" 天前"; };
+const kb=n=>n>1e6?(n/1e6).toFixed(1)+" MB":(n/1e3).toFixed(0)+" KB";
+async function api(p,b){ const r=await fetch(p,b?{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(b),credentials:"same-origin"}:{credentials:"same-origin",cache:"no-store"}); if(r.status===401){ showLogin(); throw new Error("未登录"); } return r.json(); }
+function showLogin(){ $("app").classList.add("hide"); $("loginBox").classList.remove("hide"); }
+$("loginBtn").onclick=async()=>{ const j=await api("api/admin/login",{pass:$("pw").value}); if(!j.ok){ $("loginMsg").innerHTML=`<span class="down">${esc(j.msg)}</span>`; return; } load(); };
+$("pw").onkeydown=e=>{ if(e.key==="Enter") $("loginBtn").click(); };
+$("logout").onclick=async()=>{ await api("api/admin/logout",{}); showLogin(); };
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x===b)); document.querySelectorAll("section[data-p]").forEach(s=>s.classList.toggle("hide",s.dataset.p!==b.dataset.t)); });
+let D=null;
+async function load(){ try{ D=await api("api/admin/overview"); }catch(e){ return; } $("loginBox").classList.add("hide"); $("app").classList.remove("hide"); render(); }
+function render(){
+  const vis=D.acts.filter(a=>!a.hidden).map(a=>a.short||a.name).join("、")||"无";
+  $("kpis").innerHTML=[["当前在线",D.online,`手机 ${D.onlineDev["手机"]||0} · 电脑 ${D.onlineDev["电脑"]||0}`],["今日访问",D.today.pv,`独立访客 ${D.today.uv}`],
+    ["累计访问",D.pv.toLocaleString(),`累计访客 ${D.totalIps.toLocaleString()}`],["显示中的活动",D.acts.filter(a=>!a.hidden).length,vis]]
+    .map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${esc(s)}</div></div>`).join("");
+  const mx=Math.max(1,...D.series.map(x=>x.pv));
+  $("bars").innerHTML=D.series.map(x=>`<div title="访问 ${x.pv} · 访客 ${x.uv}"><span>${x.uv}</span><i style="height:${x.pv/mx*100}px"></i><span>${x.d}</span></div>`).join("")||'<span class="dim">暂无数据</span>';
+  const name=k=>{ const a=D.acts.find(x=>x.key===k); return a?(a.short||a.name):(k==="-"?"未知":k); };
+  $("online").innerHTML=Object.entries(D.onlineAct).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)"><span>${esc(name(k))}</span><b>${n} 人</b></div>`).join("")||'<div class="dim">暂无在线用户</div>';
+  $("recent").innerHTML=D.recent.map(x=>`<tr><td>${esc(x.ip)}</td><td>${esc(x.ua||"")}</td><td>${x.pv}</td><td>${dt(x.first)}</td><td>${ago(x.last)}</td></tr>`).join("");
+  const now=D.now;
+  $("acts").innerHTML=D.acts.slice().sort((a,b)=>(a.hidden-b.hidden)||b.startTs-a.startTs).map(a=>{
+    const st=now<a.startTs?'<span class="tag y">未开始</span>':now<a.endTs?'<span class="tag g">进行中</span>':'<span class="tag">已结束</span>';
+    return `<tr><td><b>${esc(a.short||a.name)}</b> ${a.hidden?'<span class="tag">隐藏</span>':'<span class="tag g">显示中</span>'}${a.daily?' <span class="tag y">日榜+总榜</span>':''}<div class="dim" style="font-size:12px">${esc(a.chain)} · ${a.type==="xlaunch"?"X Launch":"交易赛"} · <a href="${esc(a.link)}" target="_blank">活动页</a></div></td>
+      <td>${st}<div class="dim" style="font-size:12px">${esc(a.status||"")}</div></td>
+      <td style="font-size:12.5px">${dt(a.startTs)}<br><span class="dim">→ ${dt(a.endTs)}</span></td>
+      <td style="font-size:12.5px">${a.addrs.toLocaleString()} 地址 · ${a.orders.toLocaleString()} 条<br><span class="dim">同步到 ${dt(a.chainTs)} · ${kb(a.size)}</span></td>
+      <td style="font-size:12.5px">已报名 ${a.reg.toLocaleString()} · 未报名 ${a.unreg.toLocaleString()}<br><span class="dim">官方 ${dt(a.offUt)}</span></td>
+      <td><div class="ops">${a.hidden?`<button class="btn sm" data-op="show" data-k="${a.key}">显示</button>`:`<button class="btn sm" data-op="hide" data-k="${a.key}">隐藏</button>`}
+        <button class="btn sm" data-op="only" data-k="${a.key}">只显示</button><button class="btn sm" data-op="recheck" data-k="${a.key}">刷新官方</button><button class="btn sm" data-op="cluster" data-k="${a.key}">关联分析</button>
+        <button class="btn sm" data-op="rename" data-k="${a.key}">改名</button><button class="btn sm" data-op="rescan" data-k="${a.key}">重新扫描</button><button class="btn sm red" data-op="remove" data-k="${a.key}">删除</button></div></td></tr>`; }).join("");
+  document.querySelectorAll("#acts button[data-op]").forEach(b=>b.onclick=()=>actOp(b.dataset.op,b.dataset.k));
+  $("diag").innerHTML=Object.entries(D.diag||{}).map(([k,v])=>`<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)"><span>${esc(k)}</span><span class="${/^OK/.test(v)?"up":"down"}">${esc(v)}</span></div>`).join("");
+  const up=D.uptime; $("sysinfo").innerHTML=[["版本","v"+D.version],["已运行",`${Math.floor(up/86400)} 天 ${Math.floor(up%86400/3600)} 小时 ${Math.floor(up%3600/60)} 分`],["数据目录大小",kb(D.dataSize)],["服务器时间",dt(D.now)]]
+    .map(([k,v])=>`<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)"><span class="muted">${k}</span><b>${v}</b></div>`).join("");
+  $("files").innerHTML=Object.entries(D.files).map(([f,x])=>`<tr><td>${f}</td><td>${x.size?kb(x.size):'<span class="down">缺失</span>'}</td><td>${dt(x.mtime)}</td></tr>`).join("");
+  $("nCount").textContent=`共 ${(D.notices||[]).length} 条`;
+  $("nList").innerHTML=(D.notices||[]).map(n=>`<div class="row" style="justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><b>${esc(n.title)}</b> <span class="dim" style="font-size:12px">发布 ${dt(n.ts)}${n.edited?" · 修改 "+dt(n.edited):""}</span>${n.body?`<div class="muted" style="font-size:12.5px;white-space:pre-wrap;margin-top:4px">${esc(n.body)}</div>`:""}</div><div class="ops"><button class="btn sm" data-ned="${n.id}">编辑</button><button class="btn sm red" data-nid="${n.id}">删除</button></div></div>`).join("")||'<div class="dim">暂无公告</div>';
+  document.querySelectorAll("#nList button[data-ned]").forEach(b=>b.onclick=()=>{ const n=D.notices.find(x=>x.id===b.dataset.ned); EDIT=n.id; $("nTitle").value=n.title; $("nBody").value=n.body||""; $("nFormT").textContent="编辑公告"; $("nAdd").textContent="保存修改"; $("nCancel").classList.remove("hide"); $("nReRow").classList.remove("hide"); $("nRe").checked=false; $("nTitle").scrollIntoView({behavior:"smooth",block:"center"}); });
+  $("vList").innerHTML=(D.changelog||[]).map(c=>`<div class="row" style="justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);${c.deleted?"opacity:.45":""}"><div style="flex:1;min-width:0"><b>v${esc(c.v)}</b> <span class="dim" style="font-size:12px">${esc(c.d)}</span> ${c.deleted?'<span class="tag r">已隐藏</span>':c.edited?'<span class="tag y">已修改</span>':'<span class="tag">内置</span>'}<ul style="margin:4px 0 0;padding-left:18px;color:var(--sub);font-size:12.5px;line-height:1.7">${c.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div class="ops">${c.deleted?`<button class="btn sm" data-vop="restore" data-v="${esc(c.v)}">恢复</button>`:`<button class="btn sm" data-ved="${esc(c.v)}">编辑</button>${c.edited&&c.builtin?`<button class="btn sm" data-vop="restore" data-v="${esc(c.v)}">恢复</button>`:""}<button class="btn sm red" data-vop="delete" data-v="${esc(c.v)}">${c.builtin?"隐藏":"删除"}</button>`}</div></div>`).join("")||'<div class="dim">没有版本记录</div>';
+  document.querySelectorAll("#vList button[data-ved]").forEach(b=>b.onclick=()=>{ const c=D.changelog.find(x=>x.v===b.dataset.ved); VED=c.v; $("vV").value=c.v; $("vD").value=c.d; $("vItems").value=c.items.join("\n"); $("vForm").classList.remove("hide"); $("vV").focus(); });
+  document.querySelectorAll("#vList button[data-vop]").forEach(b=>b.onclick=async()=>{ if(b.dataset.vop==="delete"&&!confirm("确定隐藏 / 删除 v"+b.dataset.v+"？")) return; const j=await api("api/admin/changelog",{op:b.dataset.vop,v:b.dataset.v}); if(!j.ok) alert(j.msg); load(); });
+  document.querySelectorAll("#nList button[data-nid]").forEach(b=>b.onclick=async()=>{ if(!confirm("删除这条公告？")) return; await api("api/admin/notice",{op:"remove",id:b.dataset.nid}); load(); });
+  $("ver").textContent=`服务 v${D.version} · 页面 v${D.pageVersion||"?"}`;
+  $("logs").textContent=D.logs.slice().reverse().join("\n")||"暂无日志";
+}
+async function actOp(op,key){
+  const a=D.acts.find(x=>x.key===key), nm=a.short||a.name; let body={op,key};
+  if(op==="remove"&&!confirm(`确定删除「${nm}」？数据文件会保留，但需要重新添加才能显示。`)) return;
+  if(op==="rescan"&&!confirm(`确定重新扫描「${nm}」？会删除链上数据并从头统计，进行中的活动可能需要几十分钟。`)) return;
+  if(op==="rename"){ const s=prompt("显示名称（标签上的短名称）",a.short||""); if(s==null) return; body.short=s; }
+  const j=await api("api/admin/act",body); if(!j.ok) alert(j.msg||"操作失败"); else if(j.msg) alert(j.msg); load();
+}
+$("addBtn").onclick=async()=>{ const u=$("url").value.trim(); if(!u) return; $("addMsg").innerHTML='<span class="muted">正在读取活动信息…（约 10–30 秒）</span>'; $("addBtn").disabled=true;
+  try{ const j=await api("api/admin/act",{op:"add",url:u}); if(!j.ok) throw new Error(j.msg);
+    if($("only").checked) await api("api/admin/act",{op:"only",key:j.key});
+    $("addMsg").innerHTML='<span class="up">已添加，服务器开始统计。进行中的活动首次同步需要几分钟到几十分钟，状态栏会显示进度。</span>'; $("url").value=""; load(); }
+  catch(e){ $("addMsg").innerHTML=`<span class="down">添加失败：${esc(e.message)}</span>`; } finally{ $("addBtn").disabled=false; } };
+let EDIT=null, VED=null;
+$("vAdd").onclick=()=>{ VED=null; $("vV").value=""; $("vD").value=new Date().toISOString().slice(0,10); $("vItems").value=""; $("vForm").classList.remove("hide"); $("vV").focus(); };
+$("vCancel").onclick=()=>$("vForm").classList.add("hide");
+$("vSave").onclick=async()=>{ const j=await api("api/admin/changelog",{op:"save",v:$("vV").value,oldv:VED||$("vV").value,d:$("vD").value,items:$("vItems").value.split("\n")});
+  $("vMsg").innerHTML=j.ok?'<span class="up">已保存</span>':`<span class="down">${esc(j.msg)}</span>`; if(j.ok){ $("vForm").classList.add("hide"); load(); } };
+function resetNotice(){ EDIT=null; $("nTitle").value=""; $("nBody").value=""; $("nFormT").textContent="发布公告"; $("nAdd").textContent="发布"; $("nCancel").classList.add("hide"); $("nReRow").classList.add("hide"); }
+$("nCancel").onclick=resetNotice;
+$("nAdd").onclick=async()=>{ const b=EDIT?{op:"edit",id:EDIT,title:$("nTitle").value,body:$("nBody").value,renotify:$("nRe").checked}:{op:"add",title:$("nTitle").value,body:$("nBody").value};
+  const j=await api("api/admin/notice",b); $("nMsg").innerHTML=j.ok?`<span class="up">${EDIT?"已保存":"已发布"}</span>`:`<span class="down">${esc(j.msg)}</span>`; if(j.ok){ resetNotice(); load(); } };
+$("refresh").onclick=load; $("refresh2").onclick=load;
+$("restart").onclick=async()=>{ if(!confirm("确定重启服务？约 3 秒后恢复。")) return; await api("api/admin/restart",{}); setTimeout(load,4000); };
+async function upload(files){ for(const f of files){ $("upMsg").innerHTML=`<span class="muted">上传 ${esc(f.name)} …</span>`;
+    const b64=await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result.split(",")[1]); fr.readAsDataURL(f); });
+    const j=await api("api/admin/upload",{name:f.name,b64}); $("upMsg").innerHTML=`<span class="${j.ok?"up":"down"}">${esc(f.name)}：${esc(j.msg)}</span>`;
+    if(j.ok&&f.name.endsWith(".py")){ await new Promise(r=>setTimeout(r,4000)); } } load(); }
+$("drop").onclick=()=>$("file").click(); $("file").onchange=e=>upload([...e.target.files]);
+$("drop").ondragover=e=>{e.preventDefault();}; $("drop").ondrop=e=>{ e.preventDefault(); upload([...e.dataTransfer.files]); };
+load(); setInterval(()=>{ if(!$("app").classList.contains("hide")) load(); },30000);
+</script>
+</body>
+</html>
